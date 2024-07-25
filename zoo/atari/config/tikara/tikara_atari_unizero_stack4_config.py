@@ -63,7 +63,7 @@ atari_unizero_stack4_config.policy.update(
                 max_tokens=2 * num_unroll_steps,
                 context_length=2 * infer_context_length,
                 device='cuda',
-                #device='cpu',
+                # device='cpu',
                 action_space_size=action_space_size,
                 num_layers=4,
                 num_heads=8,
@@ -73,7 +73,7 @@ atari_unizero_stack4_config.policy.update(
             ),
         ),
         # (str) The path of the pretrained model. If None, the model will be initialized by the default model.
-        model_path=None,
+        model_path='/mnt/d/source/LightZero/data_unizero/001_Pong_stack4_unizero_upcNone-rr0.25_H10_bs64_seed0/ckpt/iteration_126123.pth.tar',
         update_per_collect=update_per_collect,
         replay_ratio=replay_ratio,
         batch_size=batch_size,
@@ -90,9 +90,9 @@ main_config = atari_unizero_stack4_config
 create_config = atari_unizero_create_config
 
 if __name__ == "__main__":
-    seeds = [0, 1, 2]  # You can add more seed values here
+    seeds = [0]  # You can add more seed values here
     for seed in seeds:
         # Update exp_name to include the current seed
         main_config.exp_name = f'data_unizero/{env_id[:-14]}_stack4_unizero_upc{update_per_collect}-rr{replay_ratio}_H{num_unroll_steps}_bs{batch_size}_seed{seed}'
         from lzero.entry import train_unizero
-        train_unizero([main_config, create_config], seed=seed, max_env_step=max_env_step)
+        train_unizero([main_config, create_config], model_path=main_config.policy.model_path, seed=seed, max_env_step=max_env_step)
