@@ -29,10 +29,11 @@
 
 最近更新于 2024.07.12 LightZero-v0.1.0
 
-[English](https://github.com/opendilab/LightZero/blob/main/README.md) | 简体中文 | [文档](https://opendilab.github.io/LightZero) | [LightZero 论文](https://arxiv.org/abs/2310.08348) | [🔥UniZero 论文](https://arxiv.org/abs/2406.10667) | [🔥ReZero 论文](https://arxiv.org/abs/2404.16364)
+[English](https://github.com/opendilab/LightZero/blob/main/README.md) | 简体中文 | [LightZero 论文](https://arxiv.org/abs/2310.08348) | [🔥UniZero 论文](https://arxiv.org/abs/2406.10667) | [🔥ReZero 论文](https://arxiv.org/abs/2404.16364)
 
 > LightZero 是一个轻量、高效、易懂的 MCTS+RL 开源算法库。
 > 有关 LightZero 的任何疑问，您都可以咨询基于 RAG 技术的问答助手：[ZeroPal](https://huggingface.co/spaces/OpenDILabCommunity/ZeroPal)。
+
 
 
 ## 🔍 背景
@@ -107,8 +108,7 @@ LightZero 是基于 [PyTorch](https://pytorch.org/) 实现的 MCTS 算法库，�
 - [Stochastic MuZero](https://openreview.net/pdf?id=X6D9bAHhBQ1)
 - [EfficientZero](https://arxiv.org/abs/2111.00210)
 - [Gumbel MuZero](https://openreview.net/pdf?id=bERaNdoegnO&)
-- [ReZero](https://arxiv.org/abs/2404.16364)
-- [UniZero](https://arxiv.org/abs/2406.10667)
+
 
 LightZero 目前支持的环境及算法如下表所示：
 
@@ -197,17 +197,7 @@ python3 -u zoo/atari/config/atari_muzero_config.py
 cd LightZero
 python3 -u zoo/board_games/tictactoe/config/tictactoe_muzero_bot_mode_config.py
 ```
-
-使用如下代码在 [Pong](https://gymnasium.farama.org/environments/atari/pong/) 环境上快速训练一个 UniZero 智能体：
-
-```bash
-cd LightZero
-python3 -u zoo/atari/config/atari_unizero_config.py
-```
-
 ## 📚 文档
-
-LightZero的文档可以在[这里](https://opendilab.github.io/LightZero/)找到。文档中包含教程和API参考。
 
 为希望定制环境和算法的用户，我们提供了相应的指南：
 

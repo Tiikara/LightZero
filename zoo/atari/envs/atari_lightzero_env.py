@@ -2,7 +2,7 @@ import copy
 from typing import List
 
 # import gymnasium as gym
-import gym 
+import gym
 import numpy as np
 from ding.envs import BaseEnv, BaseEnvTimestep
 from ding.torch_utils import to_ndarray

@@ -182,8 +182,7 @@ class MuZeroModel(nn.Module):
             activation=activation,
             norm_type=norm_type
         )
-        
-            
+
         if self.self_supervised_learning_loss:
             # projection used in EfficientZero
             if self.downsample:
