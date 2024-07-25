@@ -30,7 +30,7 @@
 
 Updated on 2024.07.12 LightZero-v0.1.0
 
-English | [简体中文(Simplified Chinese)](https://github.com/opendilab/LightZero/blob/main/README.zh.md) | [LightZero Paper](https://arxiv.org/abs/2310.08348) | [🔥UniZero Paper](https://arxiv.org/abs/2406.10667) | [🔥ReZero Paper](https://arxiv.org/abs/2404.16364)
+English | [简体中文(Simplified Chinese)](https://github.com/opendilab/LightZero/blob/main/README.zh.md) | [Documentation](https://opendilab.github.io/LightZero) | [LightZero Paper](https://arxiv.org/abs/2310.08348) | [🔥UniZero Paper](https://arxiv.org/abs/2406.10667) | [🔥ReZero Paper](https://arxiv.org/abs/2404.16364)
 
 > LightZero is a lightweight, efficient, and easy-to-understand open-source algorithm toolkit that combines Monte Carlo Tree Search (MCTS) and Deep Reinforcement Learning (RL).
 > For any questions about LightZero, you can consult the RAG-based Q&A assistant: [ZeroPal](https://huggingface.co/spaces/OpenDILabCommunity/ZeroPal).
@@ -121,6 +121,8 @@ LightZero is a library with a [PyTorch](https://pytorch.org/) implementation of 
 - [Stochastic MuZero](https://openreview.net/pdf?id=X6D9bAHhBQ1)
 - [EfficientZero](https://arxiv.org/abs/2111.00210)
 - [Gumbel MuZero](https://openreview.net/pdf?id=bERaNdoegnO&)
+- [ReZero](https://arxiv.org/abs/2404.16364)
+- [UniZero](https://arxiv.org/abs/2406.10667)
 
 The environments and algorithms currently supported by LightZero are shown in the table below:
 
@@ -215,14 +217,23 @@ cd LightZero
 python3 -u zoo/board_games/tictactoe/config/tictactoe_muzero_bot_mode_config.py
 ```
 
+Train a UniZero agent to play [Pong](https://gymnasium.farama.org/environments/atari/pong/):
+
+```bash
+cd LightZero
+python3 -u zoo/atari/config/atari_unizero_config.py
+```
+
 ## 📚 Documentation
+
+The LightZero documentation can be found [here](https://opendilab.github.io/LightZero/). It contains tutorials and the API reference.
 
 For those interested in customizing environments and algorithms, we provide relevant guides:
 
-- [Customize Environments](https://github.com/opendilab/LightZero/blob/main/docs/source/tutorials/envs/customize_envs.md)
-- [Customize Algorithms](https://github.com/opendilab/LightZero/blob/main/docs/source/tutorials/algos/customize_algos.md)
-- [How to Set Configuration Files?](https://github.com/opendilab/LightZero/blob/main/docs/source/tutorials/config/config.md)
-- [Logging and Monitoring System](https://github.com/opendilab/LightZero/blob/main/docs/source/tutorials/logs/logs.md)
+- [Customize Environments](https://github.com/opendilab/LightZero/blob/main/docs/source//tutorials/envs/customize_envs.md)
+- [Customize Algorithms](https://github.com/opendilab/LightZero/blob/main/docs/source//tutorials/algos/customize_algos.md)
+- [How to Set Configuration Files?](https://github.com/opendilab/LightZero/blob/main/docs/source//tutorials/config/config.md)
+- [Logging and Monitoring System](https://github.com/opendilab/LightZero/blob/main/docs/source//tutorials/logs/logs.md)
 
 Should you have any questions, feel free to contact us for support.
 
