@@ -39,13 +39,6 @@ infer_context_length = 4
 # ==============================================================
 
 atari_unizero_config = dict(
-    learn=dict(
-        learner=dict(
-            hook=dict(
-                save_ckpt_after_iter=4000,
-            )
-        ),
-    ),
     env=dict(
         stop_value=int(1e6),
         env_id=env_id,
@@ -77,6 +70,13 @@ atari_unizero_config = dict(
                 embed_dim=768,
                 obs_type='image',
                 env_num=max(collector_env_num, evaluator_env_num),
+            ),
+        ),
+        learn=dict(
+            learner=dict(
+                hook=dict(
+                    save_ckpt_after_iter=10_000,
+                )
             ),
         ),
         # (str) The path of the pretrained model. If None, the model will be initialized by the default model.
