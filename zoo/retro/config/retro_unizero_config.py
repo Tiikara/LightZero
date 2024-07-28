@@ -1,9 +1,8 @@
 from easydict import EasyDict
 import time
-from zoo.atari.config.atari_env_action_space_map import atari_env_action_space_map
+import retro
 
-env_id = 'PongNoFrameskip-v4'  # You can specify any Atari game here
-action_space_size = atari_env_action_space_map[env_id]
+env_id = 'Airstriker-Genesis'  # You can specify any Retro game here
 
 # ==============================================================
 # begin of the most frequently changed config specified by the user
@@ -26,6 +25,8 @@ num_unroll_steps = 10
 # ==============================================================
 infer_context_length = 4
 
+observation_shape=(3, 64, 64)
+
 # ====== only for debug =====
 # collector_env_num = 2
 # n_episode = 2
@@ -39,11 +40,13 @@ infer_context_length = 4
 # end of the most frequently changed config specified by the user
 # ==============================================================
 
-atari_unizero_config = dict(
+action_space_size = retro.make(game=env_id).action_space.shape[0]
+
+retro_unizero_config = dict(
     env=dict(
         stop_value=int(1e6),
         env_id=env_id,
-        observation_shape=(3, 64, 64),
+        observation_shape=observation_shape,
         gray_scale=False,
         collector_env_num=collector_env_num,
         evaluator_env_num=evaluator_env_num,
@@ -51,13 +54,14 @@ atari_unizero_config = dict(
         manager=dict(shared_memory=False, ),
         save_replay=True,
         replay_path='/mnt/d/source/LightZero/data_unizero/replay',
+        # battle_mode='self_play_mode',
         # TODO: only for debug
         # collect_max_episode_steps=int(50),
         # eval_max_episode_steps=int(50),
     ),
     policy=dict(
         model=dict(
-            observation_shape=(3, 64, 64),
+            observation_shape=observation_shape,
             action_space_size=action_space_size,
             world_model_cfg=dict(
                 max_blocks=num_unroll_steps,
@@ -81,7 +85,7 @@ atari_unizero_config = dict(
             ),
         ),
         # (str) The path of the pretrained model. If None, the model will be initialized by the default model.
-        model_path='/mnt/d/source/LightZero/data_unizero/Pong_stack1_unizero_upcNone-rr0.25_H10_bs64_seed0/ckpt/iteration_80000.pth.tar',
+        model_path=None,
         num_unroll_steps=num_unroll_steps,
         update_per_collect=update_per_collect,
         replay_ratio=replay_ratio,
@@ -95,13 +99,17 @@ atari_unizero_config = dict(
         evaluator_env_num=evaluator_env_num,
     ),
 )
-atari_unizero_config = EasyDict(atari_unizero_config)
-main_config = atari_unizero_config
+retro_unizero_config = EasyDict(retro_unizero_config)
+main_config = retro_unizero_config
 
-atari_unizero_create_config = dict(
+retro_unizero_create_config = dict(
+    # env=dict(
+    #     type='atari_lightzero_selfplay',
+    #     import_names=['zoo.atari.envs.atari_self_play_env'],
+    # ),
     env=dict(
-        type='atari_lightzero',
-        import_names=['zoo.atari.envs.atari_lightzero_env'],
+        type='retro_lightzero',
+        import_names=['zoo.retro.envs.retro_lightzero_env'],
     ),
     env_manager=dict(type='subprocess'),
     policy=dict(
@@ -109,8 +117,8 @@ atari_unizero_create_config = dict(
         import_names=['lzero.policy.unizero'],
     ),
 )
-atari_unizero_create_config = EasyDict(atari_unizero_create_config)
-create_config = atari_unizero_create_config
+retro_unizero_create_config = EasyDict(retro_unizero_create_config)
+create_config = retro_unizero_create_config
 
 if __name__ == "__main__":
     # Define a list of seeds for multiple runs
