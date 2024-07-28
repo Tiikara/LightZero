@@ -170,7 +170,10 @@ class RetroWrapper(gym.Wrapper):
         super().__init__(env)
 
     def step(self, ac):
-        return self.env.step([ac])
+        retro_actions_arr = [0] * self.env.action_space.shape[0]
+        retro_actions_arr[ac] = 1
+
+        return self.env.step(retro_actions_arr)
 
 class WarpFrame(gym.ObservationWrapper):
     """
