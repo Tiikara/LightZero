@@ -178,7 +178,7 @@ class DownSample(nn.Module):
             - out_channels (:obj:`int`): The output channels of output hidden state.
             - activation (:obj:`nn.Module`): The activation function used in network, defaults to nn.ReLU(inplace=True). \
                 Use the inplace operation to speed up.
-            - norm_type (:obj:`Optional[str]`): The normalization type used in network, defaults to 'BN'. 
+            - norm_type (:obj:`Optional[str]`): The normalization type used in network, defaults to 'BN'.
         """
         super().__init__()
         assert norm_type in ['BN', 'LN'], "norm_type must in ['BN', 'LN']"
@@ -261,12 +261,15 @@ class DownSample(nn.Module):
         elif self.observation_shape[1] == 96:
             x = self.pooling2(x)
             output = x
+        else:
+            x = self.pooling2(x)
+            output = x
 
         return output
 
 
 class RepresentationNetworkUniZero(nn.Module):
-    
+
     def __init__(
             self,
             observation_shape: SequenceType = (3, 64, 64),
@@ -355,7 +358,7 @@ class RepresentationNetworkUniZero(nn.Module):
         for block in self.resblocks:
             x = block(x)
 
-        # NOTE: very important. 
+        # NOTE: very important.
         # for atari (64,8,8), flatten_size = 4096 -> 768
         x = self.last_linear(x.reshape(-1, 64 * 8 * 8))
         x = x.view(-1, self.embedding_dim)
@@ -457,7 +460,7 @@ class RepresentationNetwork(nn.Module):
             x = block(x)
 
         if self.use_sim_norm:
-            # NOTE: very important. 
+            # NOTE: very important.
             # for atari 64,8,8 = 4096 -> 768
             x = self.sim_norm(x)
 
@@ -518,7 +521,7 @@ class RepresentationNetworkMLP(nn.Module):
 
 
 class LatentDecoder(nn.Module):
-    
+
     def __init__(self, embedding_dim: int, output_shape: SequenceType, num_channels: int = 64, activation: nn.Module = nn.GELU(approximate='tanh')):
         """
         Overview:
