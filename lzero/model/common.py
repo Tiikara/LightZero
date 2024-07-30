@@ -50,6 +50,26 @@ class MZNetworkOutput:
     latent_state: torch.Tensor
 
 
+class NormByType(nn.Module):
+    def __init__(self, norm_type: str, channels: int, size0: int, size1: int) -> None:
+        super().__init__()
+
+        self.norm_type = norm_type
+
+        if norm_type == 'BN':
+            self.layer = nn.BatchNorm2d(channels)
+        elif norm_type == 'LN':
+            self.layer = nn.LayerNorm([channels, size0, size1], eps=1e-5)
+        else:
+            self.layer = None
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.layer is None:
+            return x
+        else:
+            return self.layer(x)
+
+
 class SimNorm(nn.Module):
 
     def __init__(self, simnorm_dim: int) -> None:

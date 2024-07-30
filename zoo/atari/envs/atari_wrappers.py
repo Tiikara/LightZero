@@ -14,6 +14,8 @@ from ding.utils.compression_helper import jpeg_data_compressor
 from easydict import EasyDict
 # from gymnasium.wrappers import RecordVideo
 from gym.wrappers import RecordVideo
+import atomics
+import threading
 
 
 # only for reference now
@@ -101,7 +103,7 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
             and hasattr(config, 'replay_path') and config.replay_path is not None:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         video_name = f'{env.spec.id}-video-{timestamp}'
-        env = RecordVideo(
+        env = UniqueNameResetRecordVideo(
             env,
             video_folder=config.replay_path,
             episode_trigger=lambda episode_id: True,
@@ -216,6 +218,29 @@ class WarpFrame(gym.ObservationWrapper):
             obs = obs.copy()
             obs[self._key] = frame
         return obs
+
+class UniqueNameResetRecordVideo(RecordVideo):
+    def __init__(self, *args, **kwargs):
+        """
+        Arguments:
+            - env (:obj:`gym.Env`): The environment to wrap.
+            - max_episode_steps (:obj:`Optional[int]`): Maximum number of steps per episode. If None, no limit is applied.
+        """
+        super().__init__(*args, **kwargs)
+
+        self._uniqure_name_reset_original_name_prefix = self.name_prefix
+        self._uniqure_name_reset_atomic_id = atomics.atomic(width=4, atype=atomics.INT)
+
+    def _uniqure_name_reset_update_name_prefix(self):
+        self.name_prefix = f"{self._uniqure_name_reset_original_name_prefix}_thread{threading.get_ident()}_resetid{self._uniqure_name_reset_atomic_id.fetch_inc()}"
+
+    def step(self, ac):
+        self._uniqure_name_reset_update_name_prefix()
+        return super().step(ac)
+
+    def reset(self, **kwargs):
+        self._uniqure_name_reset_update_name_prefix()
+        return super().reset(**kwargs)
 
 
 class JpegWrapper(gym.Wrapper):

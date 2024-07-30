@@ -15,7 +15,7 @@ evaluator_env_num = 3
 num_simulations = 50
 max_env_step = int(1e6)
 reanalyze_ratio = 0.
-batch_size = 64
+batch_size = 32
 # ==============================================================
 # Размер контекста при обучении. Определяет размер максимальный размер контекста сети
 # ==============================================================
@@ -25,7 +25,7 @@ num_unroll_steps = 10
 # ==============================================================
 infer_context_length = 4
 
-observation_shape=(3, 64, 64)
+observation_shape=(3, 128, 128)
 
 # ====== only for debug =====
 # collector_env_num = 2
@@ -85,7 +85,7 @@ retro_unizero_config = dict(
             ),
         ),
         # (str) The path of the pretrained model. If None, the model will be initialized by the default model.
-        model_path=None,
+        model_path='/mnt/d/source/LightZero/data_unizero/Airs_stack1_unizero_upcNone-rr0.25_H10_bs32_seed1722249408/ckpt/ckpt_best.pth.tar',
         num_unroll_steps=num_unroll_steps,
         update_per_collect=update_per_collect,
         replay_ratio=replay_ratio,

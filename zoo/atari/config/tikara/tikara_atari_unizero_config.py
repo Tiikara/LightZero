@@ -59,6 +59,7 @@ atari_unizero_config = dict(
         model=dict(
             observation_shape=(3, 64, 64),
             action_space_size=action_space_size,
+            use_optimized_representation=True, # Use optimized version of RepresentationModel
             world_model_cfg=dict(
                 max_blocks=num_unroll_steps,
                 max_tokens=2 * num_unroll_steps,  # NOTE: each timestep has 2 tokens: obs and action
@@ -81,7 +82,7 @@ atari_unizero_config = dict(
             ),
         ),
         # (str) The path of the pretrained model. If None, the model will be initialized by the default model.
-        model_path='/mnt/d/source/LightZero/data_unizero/Pong_stack1_unizero_upcNone-rr0.25_H10_bs64_seed0/ckpt/iteration_80000.pth.tar',
+        model_path=None,
         num_unroll_steps=num_unroll_steps,
         update_per_collect=update_per_collect,
         replay_ratio=replay_ratio,
