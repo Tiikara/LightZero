@@ -54,13 +54,16 @@ class DownSampleOptimized(nn.Module):
 
         current_size = current_size // 2
 
-        self.norm_initial = NormByType(norm_type=norm_type, channels=current_channels, size0=current_size, size1=current_channels)
+        self.norm_initial = NormByType(
+            norm_type=norm_type,
+            channels=current_channels,
+            size0=current_size,
+            size1=current_size
+        )
 
         self.blocks = nn.ModuleList([])
 
         while current_size > 8:
-            out_channels = current_channels * 2
-
             self.blocks.append(
                 ResBlock(
                     in_channels=current_channels,
@@ -71,6 +74,8 @@ class DownSampleOptimized(nn.Module):
                     bias=False
                 )
             )
+
+            out_channels = current_channels * 2
 
             self.blocks.append(
                 ResBlock(
@@ -87,15 +92,16 @@ class DownSampleOptimized(nn.Module):
             current_channels = out_channels
 
         self.out_channels = current_channels * current_size
+        self.out_size = current_size
 
         self.out_conv = nn.Conv2d(
-                current_channels,
-                self.out_channels,
-                kernel_size=current_size,
-                stride=current_size - 1,
-                padding=0,
-                bias=False
-            )
+            current_channels,
+            self.out_channels,
+            kernel_size=current_size,
+            stride=current_size - 1,
+            padding=0,
+            bias=False
+        )
 
         self.out_norm = NormByType(
             norm_type=norm_type,
@@ -162,6 +168,8 @@ class RepresentationNetworkUniZeroOptimized(nn.Module):
         logging.info(f"Using activation type: {activation}")
 
         self.observation_shape = observation_shape
+        self.activation = activation
+        self.embedding_dim = embedding_dim
 
         self.downsample_net = DownSampleOptimized(
             observation_shape,
@@ -190,10 +198,11 @@ class RepresentationNetworkUniZeroOptimized(nn.Module):
             ]
         )
 
-        self.activation = activation
-        self.embedding_dim = embedding_dim
-
-        self.last_linear = nn.Linear(self.downsample_net.out_channels, self.embedding_dim, bias=False)
+        self.last_linear = nn.Linear(
+            self.downsample_net.out_channels,
+            self.embedding_dim,
+            bias=False
+        )
 
         self.sim_norm = SimNorm(simnorm_dim=group_size)
 
@@ -214,7 +223,7 @@ class RepresentationNetworkUniZeroOptimized(nn.Module):
 
         # NOTE: very important.
         # flatten_size = out_channels -> 768
-        x = self.last_linear(x.reshape(-1, self.downsample_net.out_channels))
+        x = self.last_linear(x.reshape(-1, self.downsample_net.out_channels * self.downsample_net.out_size * self.downsample_net.out_size))
         x = x.view(-1, self.embedding_dim)
 
         # NOTE: very important for training stability.
