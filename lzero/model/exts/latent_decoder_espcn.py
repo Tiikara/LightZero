@@ -46,7 +46,7 @@ class LatentDecoderESPCN(nn.Module):
         # Upsampling blocks
         self.conv_blocks = nn.ModuleList([
             ResBlock(
-                in_channels=initial_channels, out_channels=self.hidden_channels * 4, activation=activation, norm_type='BN', res_type='basic', bias=False
+                in_channels=num_channels, out_channels=self.hidden_channels * 4, activation=activation, norm_type='BN', res_type='basic', bias=False
             ), # 8x8
             nn.PixelShuffle(2), # -> 16
             ResBlock(
