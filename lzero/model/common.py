@@ -51,23 +51,22 @@ class MZNetworkOutput:
 
 
 class NormByType(nn.Module):
-    def __init__(self, norm_type: str, channels: int, size0: int, size1: int) -> None:
+    def __init__(self, norm_type: str, channels: int, size0: int = None, size1: int = None) -> None:
         super().__init__()
+        assert norm_type in ['BN', 'LN'], "norm_type must in ['BN', 'LN']"
 
         self.norm_type = norm_type
 
         if norm_type == 'BN':
             self.layer = nn.BatchNorm2d(channels)
         elif norm_type == 'LN':
-            self.layer = nn.LayerNorm([channels, size0, size1], eps=1e-5)
-        else:
-            self.layer = None
+            if size0 is None or size1 is None:
+                self.layer = nn.LayerNorm(channels, eps=1e-5)
+            else:
+                self.layer = nn.LayerNorm([channels, size0, size1], eps=1e-5)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self.layer is None:
-            return x
-        else:
-            return self.layer(x)
+        return self.layer(x)
 
 
 class SimNorm(nn.Module):

@@ -9,7 +9,8 @@ from .common import MZNetworkOutput, RepresentationNetworkUniZero, Representatio
     VectorDecoderForMemoryEnv, LatentEncoderForMemoryEnv, LatentDecoderForMemoryEnv, FeatureAndGradientHook
 from .unizero_world_models.tokenizer import Tokenizer
 from .unizero_world_models.world_model import WorldModel
-from .modelsext import RepresentationNetworkUniZeroOptimized
+from .exts.modelsext import RepresentationNetworkUniZeroOptimized
+from .exts.latent_decoder_espcn import LatentDecoderESPCN
 
 # use ModelRegistry to register the model, for more details about ModelRegistry, please refer to DI-engine's document.
 @MODEL_REGISTRY.register('UniZeroModel')
@@ -26,6 +27,7 @@ class UniZeroModel(nn.Module):
             norm_type: Optional[str] = 'BN',
             world_model_cfg: EasyDict = None,
             use_optimized_representation=False,
+            use_latent_decoder_espcn=False,
             *args,
             **kwargs
     ):
@@ -111,7 +113,11 @@ class UniZeroModel(nn.Module):
                 )
 
             # TODO: we should change the output_shape to the real observation shape
-            self.decoder_network = LatentDecoder(embedding_dim=world_model_cfg.embed_dim, output_shape=(3, 64, 64))
+
+            if use_latent_decoder_espcn:
+                self.decoder_network = LatentDecoderESPCN(embedding_dim=world_model_cfg.embed_dim, output_shape=(3, 64, 64), num_channels=self.representation_network.downsample_net.final_stage_channels)
+            else:
+                self.decoder_network = LatentDecoder(embedding_dim=world_model_cfg.embed_dim, output_shape=(3, 64, 64))
 
             # ====== for analysis ======
             if world_model_cfg.analysis_sim_norm:

@@ -1,6 +1,7 @@
 from easydict import EasyDict
 import time
 from zoo.atari.config.atari_env_action_space_map import atari_env_action_space_map
+import torch
 
 env_id = 'PongNoFrameskip-v4'  # You can specify any Atari game here
 action_space_size = atari_env_action_space_map[env_id]
@@ -26,6 +27,8 @@ num_unroll_steps = 10
 # ==============================================================
 infer_context_length = 4
 
+observation_shape=(3, 64, 64)
+
 # ====== only for debug =====
 # collector_env_num = 2
 # n_episode = 2
@@ -43,7 +46,7 @@ atari_unizero_config = dict(
     env=dict(
         stop_value=int(1e6),
         env_id=env_id,
-        observation_shape=(3, 64, 64),
+        observation_shape=observation_shape,
         gray_scale=False,
         collector_env_num=collector_env_num,
         evaluator_env_num=evaluator_env_num,
@@ -57,9 +60,10 @@ atari_unizero_config = dict(
     ),
     policy=dict(
         model=dict(
-            observation_shape=(3, 64, 64),
+            observation_shape=observation_shape,
             action_space_size=action_space_size,
             use_optimized_representation=True, # Use optimized version of RepresentationModel
+            use_latent_decoder_espcn=True, # More accurate model
             world_model_cfg=dict(
                 max_blocks=num_unroll_steps,
                 max_tokens=2 * num_unroll_steps,  # NOTE: each timestep has 2 tokens: obs and action
