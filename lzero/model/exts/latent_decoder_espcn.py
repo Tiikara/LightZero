@@ -44,7 +44,7 @@ class LatentDecoderESPCN(nn.Module):
         initial_channels = np.prod(self.initial_size)
         self.fc = nn.Linear(self.embedding_dim, initial_channels)
 
-        self.hidden_channels = 64
+        self.hidden_channels = 16
 
         # Upsampling blocks
         self.conv_blocks = nn.ModuleList([
