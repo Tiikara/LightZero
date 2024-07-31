@@ -1,7 +1,3 @@
-#################
-# https://github.com/hankyul2/EfficientNetV2-pytorch/tree/main
-#################
-
 import math
 from dataclasses import dataclass
 from typing import Optional, Tuple
@@ -27,6 +23,10 @@ import torch
 from torch import nn
 
 class DynamicEfficientNetV2DownSample(nn.Module):
+    #################
+    # https://github.com/hankyul2/EfficientNetV2-pytorch/tree/main
+    #################
+
     def __init__(self, power_deep=1.0, power_width=1.0, input_size=224, in_channels=3, out_features=1000, dropout=0., stochastic_depth=0.,
                  block=MBConv, act_layer=nn.SiLU, norm_layer=nn.BatchNorm2d):
         super().__init__()

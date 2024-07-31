@@ -13,6 +13,9 @@ from ditk import logging
 from lzero.model.common import SimNorm
 from lzero.model.common import NormByType
 from functools import partial
+from .efficientnet_v2 import MBConvConfig, MBConv, ConvBNAct
+
+
 class LatentDecoderESPCN(nn.Module):
 
     def __init__(self, embedding_dim: int, output_shape: SequenceType, num_channels: int = 64, activation: nn.Module = nn.GELU(approximate='tanh')):
@@ -45,21 +48,14 @@ class LatentDecoderESPCN(nn.Module):
 
         # Upsampling blocks
         self.conv_blocks = nn.ModuleList([
-            ResBlock(
-                in_channels=num_channels, out_channels=self.hidden_channels * 4, activation=activation, norm_type='BN', res_type='basic', bias=False
-            ), # 8x8
-            nn.PixelShuffle(2), # -> 16
-            ResBlock(
-                in_channels=self.hidden_channels, out_channels=self.hidden_channels * 4, activation=activation, norm_type='BN', res_type='basic', bias=False
-            ),
-            nn.PixelShuffle(2), # -> 32
-            ResBlock(
-                in_channels=self.hidden_channels, out_channels=self.hidden_channels * 4, activation=activation, norm_type='BN', res_type='basic', bias=False
-            ),
-            nn.PixelShuffle(2), # -> 64
-            ResBlock(
-                in_channels=self.hidden_channels, out_channels=output_shape[0], activation=activation, norm_type='BN', res_type='basic', bias=False
-            ),
+            # 8x8
+            MBConv(MBConvConfig(6, 3, 1, num_channels, self.hidden_channels * 4, 1, True, False, act=lambda: activation)),
+            nn.PixelShuffle(2), # -> 16x16
+            MBConv(MBConvConfig(4, 3, 1, self.hidden_channels, self.hidden_channels * 4, 1, True, False, act=lambda: activation)),
+            nn.PixelShuffle(2), # -> 32x32
+            MBConv(MBConvConfig(4, 3, 1, self.hidden_channels, self.hidden_channels * 4, 1, False, True, act=lambda: activation)),
+            nn.PixelShuffle(2), # -> 64x64
+            MBConv(MBConvConfig(1, 3, 1, self.hidden_channels, output_shape[0], 1, False, True, act=lambda: activation)),
         ])
         # TODO: last layer use sigmoid?
 

@@ -1,3 +1,7 @@
+#################
+# https://github.com/hankyul2/EfficientNetV2-pytorch/tree/main
+#################
+
 import copy
 from functools import partial
 from collections import OrderedDict
