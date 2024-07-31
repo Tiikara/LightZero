@@ -55,7 +55,7 @@ class LatentDecoderESPCN(nn.Module):
             nn.PixelShuffle(2), # -> 32x32
             MBConv(MBConvConfig(4, 3, 1, self.hidden_channels, self.hidden_channels * 4, 1, False, True, act=lambda: activation)),
             nn.PixelShuffle(2), # -> 64x64
-            MBConv(MBConvConfig(1, 3, 1, self.hidden_channels, output_shape[0], 1, False, True, act=lambda: activation)),
+            ConvBNAct(self.hidden_channels, output_shape[0], 3, 2, 1, norm_layer=nn.BatchNorm2d, act=lambda: activation)
         ])
         # TODO: last layer use sigmoid?
 
