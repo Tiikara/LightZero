@@ -860,7 +860,7 @@ class WorldModel(nn.Module):
         # Uncomment the lines below for visual analysis in visual match
         # self.plot_latent_tsne_each_and_all(obs_embeddings, suffix='visual_match_memlen1-60-15_tsne')
         # self.save_as_image_with_timestep(batch['observations'], suffix='visual_match_memlen1-60-15_tsne')
-        
+
         # ========= logging for analysis =========
         if self.analysis_dormant_ratio:
             # Calculate dormant ratio of the encoder
@@ -880,7 +880,8 @@ class WorldModel(nn.Module):
 
         if self.obs_type == 'image':
             # Reconstruct observations from latent state representations
-            reconstructed_images = self.tokenizer.decode_to_obs(obs_embeddings)
+            if self.latent_recon_loss_weight != 0. or self.perceptual_loss_weight != 0.:
+                reconstructed_images = self.tokenizer.decode_to_obs(obs_embeddings)
 
             #  ========== for visualization ==========
             # Uncomment the lines below for visual analysis
@@ -893,12 +894,17 @@ class WorldModel(nn.Module):
             #  ========== for visualization ==========
 
             # Calculate reconstruction loss and perceptual loss
-            # latent_recon_loss = self.tokenizer.reconstruction_loss(batch['observations'].reshape(-1, 3, 64, 64), reconstructed_images) # NOTE: for stack=1
-            # perceptual_loss = self.tokenizer.perceptual_loss(batch['observations'].reshape(-1, 3, 64, 64), reconstructed_images) # NOTE: for stack=1
-            latent_recon_loss = torch.tensor(0., device=batch['observations'].device,
-                                             dtype=batch['observations'].dtype)
-            perceptual_loss = torch.tensor(0., device=batch['observations'].device,
-                                           dtype=batch['observations'].dtype)
+            if self.latent_recon_loss_weight != 0.:
+                latent_recon_loss = self.tokenizer.reconstruction_loss(batch['observations'].reshape(-1, 3, 64, 64), reconstructed_images) # NOTE: for stack=1
+            else:
+                latent_recon_loss = torch.tensor(0., device=batch['observations'].device,
+                                                 dtype=batch['observations'].dtype)
+
+            if self.perceptual_loss_weight != 0.:
+                perceptual_loss = self.tokenizer.perceptual_loss(batch['observations'].reshape(-1, 3, 64, 64), reconstructed_images) # NOTE: for stack=1
+            else:
+                perceptual_loss = torch.tensor(0., device=batch['observations'].device,
+                                               dtype=batch['observations'].dtype)
 
         elif self.obs_type == 'vector':
             perceptual_loss = torch.tensor(0., device=batch['observations'].device,
@@ -959,7 +965,7 @@ class WorldModel(nn.Module):
         # predict_rewards = inverse_scalar_transform_handle(outputs.logits_rewards.reshape(-1, 101)).reshape(batch['observations'].shape[0], batch['observations'].shape[1], 1)
         # import pdb; pdb.set_trace()
         # visualize_reward_value_img_policy(original_images, reconstructed_images, target_predict_value, true_rewards, target_policy, predict_value, predict_rewards, predict_policy, not_plot_timesteps=[], suffix='pong_H10_H4_0613')
-        
+
         # visualize_reward_value_img_policy(original_images, reconstructed_images, target_predict_value, true_rewards, target_policy, predict_value, predict_rewards, predict_policy, not_plot_timesteps=list(np.arange(4,60)), suffix='visual_match_memlen1-60-15/one_success_episode')
         # visualize_reward_value_img_policy(original_images, reconstructed_images, target_predict_value, true_rewards, target_policy, predict_value, predict_rewards, predict_policy, not_plot_timesteps=list(np.arange(4,60)), suffix='visual_match_memlen1-60-15/one_fail_episode')
         #  ========== for visualization ==========
