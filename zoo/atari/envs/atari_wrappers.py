@@ -110,9 +110,6 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
             name_prefix=video_name
         )
 
-    if config.reward_every_frame:
-        env = RewardEveryFrame(env, reward=config.reward_every_frame, max_reward=config.max_reward_every_frame)
-
     # env = GymnasiumToGymWrapper(env)
 
     env = NoopResetWrapper(env, noop_max=30)
@@ -126,7 +123,10 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
     if config.scale:
         env = ScaledFloatFrameWrapper(env)
     if clip_rewards:
-        env = ClipRewardWrapper(env)
+        env = ClipReward(env)
+
+    if config.reward_every_frame:
+        env = RewardEveryFrame(env, reward=config.reward_every_frame, max_reward=config.max_reward_every_frame)
 
     env = JpegWrapper(env, transform2string=config.transform2string)
     if config.game_wrapper:
@@ -223,8 +223,18 @@ class WarpFrame(gym.ObservationWrapper):
             obs[self._key] = frame
         return obs
 
+class ClipReward(gym.RewardWrapper):
+    def __init__(self, env, min_reward = -1.0, max_reward=1.0):
+        super().__init__(env)
+        self.min_reward = min_reward
+        self.max_reward = max_reward
+        self.reward_range = (min_reward, max_reward)
+
+    def reward(self, reward):
+        return np.clip(reward, self.min_reward, self.max_reward)
+
 class RewardEveryFrame(gym.Wrapper):
-    def __init__(self, env: gym.Env, reward: float = 0.01, max_reward: float = 0.5):
+    def __init__(self, env: gym.Env, reward: float = 0.01, max_reward: float = 0.25):
         """
         Arguments:
             - env (:obj:`gym.Env`): The environment to wrap.
@@ -239,8 +249,7 @@ class RewardEveryFrame(gym.Wrapper):
 
         if reward != 0.:
             if reward > 0.:
-                # The agent must try to get real reward as soon as possible
-                reward -= self.current_enc_reward / 2. # Divide by 2 to prioritize the real rewards over the temporary ones.
+                reward -= self.current_enc_reward * 2 # The agent must try to get real reward as soon as possible
                 if reward < 0.:
                     reward = self.reward * 2
 
@@ -248,6 +257,8 @@ class RewardEveryFrame(gym.Wrapper):
         elif self.current_enc_reward < self.max_reward:
             self.current_enc_reward += self.reward
             reward += self.reward
+        else:
+            reward -= self.reward
 
         return observation, reward, done, info
 
