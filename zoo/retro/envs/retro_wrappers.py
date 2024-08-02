@@ -124,7 +124,7 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
     if clip_rewards:
         env = ClipReward(env)
 
-    wrap_continuous_reward_wrapper_based_on_config(env, config)
+    env = wrap_continuous_reward_wrapper_based_on_config(env, config)
 
     env = JpegWrapper(env, transform2string=config.transform2string)
     if config.game_wrapper:
