@@ -62,6 +62,8 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
         self.embedding_dim = embedding_dim
 
         ##
+        # mobilenetv4_conv_small
+        ##
         # in 224x224
         # torch.Size([1, 32, 112, 112])
         # torch.Size([1, 32, 56, 56])
