@@ -75,6 +75,8 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
             pretrained=True,
             features_only=True,
             out_indices=[3], # 3 - [1, 96, width // 16, height // 16]
+            drop_rate=0.1,
+            drop_path_rate=0.1,
             act_layer=lambda **kwargs: activation
         )
 

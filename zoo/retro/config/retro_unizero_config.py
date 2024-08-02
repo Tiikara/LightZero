@@ -59,7 +59,6 @@ retro_unizero_config = dict(
             reward=0.001,
             max_reward=0.25
         ),
-        # battle_mode='self_play_mode',
         # TODO: only for debug
         # collect_max_episode_steps=int(50),
         # eval_max_episode_steps=int(50),
