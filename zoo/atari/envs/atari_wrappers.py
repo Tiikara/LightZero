@@ -113,7 +113,7 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
     # env = GymnasiumToGymWrapper(env)
 
     if config.reward_every_frame:
-        env = RewardEveryFrame(env, reward=config.reward_every_frame)
+        env = RewardEveryFrame(env, reward=config.reward_every_frame, max_reward=config.max_reward_every_frame)
 
     env = NoopResetWrapper(env, noop_max=30)
     env = MaxAndSkipWrapper(env, skip=config.frame_skip)
@@ -224,18 +224,30 @@ class WarpFrame(gym.ObservationWrapper):
         return obs
 
 class RewardEveryFrame(gym.Wrapper):
-    def __init__(self, env: gym.Env, reward: float = 0.01):
+    def __init__(self, env: gym.Env, reward: float = 0.01, max_reward: float = 0.5):
         """
         Arguments:
             - env (:obj:`gym.Env`): The environment to wrap.
         """
         super().__init__(env)
         self.reward = reward
+        self.max_reward = max_reward
+        self.current_enc_reward = 0.
 
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
-        reward += self.reward
+
+        if reward != 0.:
+            self.current_enc_reward = 0.
+        elif self.current_enc_reward < self.max_reward:
+            self.current_enc_reward += self.reward
+            reward += self.reward
+
         return observation, reward, done, info
+
+    def reset(self, **kwargs):
+        self.current_enc_reward = 0.
+        return self.env.reset(**kwargs)
 
 class UniqueNameResetRecordVideo(RecordVideo):
     def __init__(self, *args, **kwargs):
