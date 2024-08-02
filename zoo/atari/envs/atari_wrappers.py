@@ -240,7 +240,7 @@ class RewardEveryFrame(gym.Wrapper):
         if reward != 0.:
             if reward > 0.:
                 # The agent must try to get reward as soon as possible
-                reward -= self.current_enc_reward
+                reward -= self.current_enc_reward / 2. # Divide by 2 to prioritize the real rewards over the temporary ones.
                 if reward < 0.:
                     reward = self.reward * 2
 
