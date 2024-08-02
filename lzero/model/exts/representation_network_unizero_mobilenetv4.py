@@ -74,7 +74,7 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
             'mobilenetv4_conv_small.e2400_r224_in1k',
             pretrained=True,
             features_only=True,
-            out_indices=[3],
+            out_indices=[3], # 3 - [1, 96, width // 16, height // 16]
             act_layer=lambda **kwargs: activation
         )
 
