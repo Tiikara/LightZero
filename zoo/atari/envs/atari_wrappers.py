@@ -111,6 +111,10 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
         )
 
     # env = GymnasiumToGymWrapper(env)
+
+    if config.reward_every_frame:
+        env = RewardEveryFrame(env, reward=config.reward_every_frame)
+
     env = NoopResetWrapper(env, noop_max=30)
     env = MaxAndSkipWrapper(env, skip=config.frame_skip)
     if episode_life:
@@ -218,6 +222,20 @@ class WarpFrame(gym.ObservationWrapper):
             obs = obs.copy()
             obs[self._key] = frame
         return obs
+
+class RewardEveryFrame(gym.Wrapper):
+    def __init__(self, env: gym.Env, reward: float = 0.01):
+        """
+        Arguments:
+            - env (:obj:`gym.Env`): The environment to wrap.
+        """
+        super().__init__(env)
+        self.reward = reward
+
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        reward += self.reward
+        return observation, reward, done, info
 
 class UniqueNameResetRecordVideo(RecordVideo):
     def __init__(self, *args, **kwargs):

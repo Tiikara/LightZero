@@ -54,6 +54,7 @@ atari_unizero_config = dict(
         manager=dict(shared_memory=False, ),
         save_replay=True,
         replay_path='/mnt/d/source/LightZero/data_unizero/replay',
+        reward_every_frame=0.01,
         # TODO: only for debug
         # collect_max_episode_steps=int(50),
         # eval_max_episode_steps=int(50),
