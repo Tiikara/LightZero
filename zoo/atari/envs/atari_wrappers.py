@@ -110,6 +110,9 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
             name_prefix=video_name
         )
 
+    if config.reward_every_frame:
+        env = RewardEveryFrame(env, reward=config.reward_every_frame, max_reward=config.max_reward_every_frame)
+
     # env = GymnasiumToGymWrapper(env)
 
     env = NoopResetWrapper(env, noop_max=30)
@@ -124,9 +127,6 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
         env = ScaledFloatFrameWrapper(env)
     if clip_rewards:
         env = ClipRewardWrapper(env)
-
-        if config.reward_every_frame:
-            env = RewardEveryFrame(env, reward=config.reward_every_frame, max_reward=config.max_reward_every_frame)
 
     env = JpegWrapper(env, transform2string=config.transform2string)
     if config.game_wrapper:
@@ -239,7 +239,7 @@ class RewardEveryFrame(gym.Wrapper):
 
         if reward != 0.:
             if reward > 0.:
-                # The agent must try to get reward as soon as possible
+                # The agent must try to get real reward as soon as possible
                 reward -= self.current_enc_reward / 2. # Divide by 2 to prioritize the real rewards over the temporary ones.
                 if reward < 0.:
                     reward = self.reward * 2
