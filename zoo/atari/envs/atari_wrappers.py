@@ -9,7 +9,7 @@ import gym
 import numpy as np
 from ding.envs import NoopResetWrapper, MaxAndSkipWrapper, EpisodicLifeWrapper, FireResetWrapper, WarpFrameWrapper, \
     ScaledFloatFrameWrapper, \
-    ClipRewardWrapper, FrameStackWrapper
+    FrameStackWrapper
 from ding.utils.compression_helper import jpeg_data_compressor
 from easydict import EasyDict
 # from gymnasium.wrappers import RecordVideo
@@ -126,7 +126,7 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
     if config.scale:
         env = ScaledFloatFrameWrapper(env)
     if clip_rewards:
-        env = ClipRewardWrapper(env)
+        env = ContinuousClipRewardWrapper(env)
 
     env = JpegWrapper(env, transform2string=config.transform2string)
     if config.game_wrapper:
@@ -222,6 +222,44 @@ class WarpFrame(gym.ObservationWrapper):
             obs = obs.copy()
             obs[self._key] = frame
         return obs
+
+class ContinuousClipRewardWrapper(gym.RewardWrapper):
+    """
+    Overview:
+        The ClipRewardWrapper class is a gym reward wrapper that clips the reward to {-1, 0, +1} based on its sign.
+        This can be used to normalize the scale of the rewards in reinforcement learning algorithms.
+    Interfaces:
+        __init__, reward
+    Properties:
+        - env (:obj:`gym.Env`): the environment to wrap.
+        - reward_range (:obj:`Tuple[int, int]`): the range of the reward values after clipping.
+    """
+
+    def __init__(self, env: gym.Env):
+        """
+        Overview:
+            Initialize the ClipRewardWrapper class.
+        Arguments:
+            - env (:obj:`gym.Env`): the environment to wrap.
+        """
+        super().__init__(env)
+        self.reward_range = (-1, 1)
+
+    def reward(self, reward: float) -> float:
+        """
+        Overview:
+            Clip the reward to {-1, 0, +1} based on its sign. Note: np.sign(0) == 0.
+        Arguments:
+            - reward (:obj:`float`): the original reward.
+        Returns:
+            - reward (:obj:`float`): the clipped reward.
+        """
+        if reward < -1.0:
+            return -1.0
+        if reward > 1.0:
+            return 1.0
+
+        return reward
 
 class RewardEveryFrame(gym.Wrapper):
     def __init__(self, env: gym.Env, reward: float = 0.01, max_reward: float = 0.5):
