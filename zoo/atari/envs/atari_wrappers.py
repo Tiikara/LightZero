@@ -16,7 +16,7 @@ from easydict import EasyDict
 from gym.wrappers import RecordVideo
 import atomics
 import threading
-
+from lzero.envs.wrappers.continuous_reward_wrapper import wrap_continuous_reward_wrapper_based_on_config
 
 # only for reference now
 def wrap_deepmind(env_id, episode_life=True, clip_rewards=True, frame_stack=4, scale=True, warp_frame=True):
@@ -125,8 +125,7 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
     if clip_rewards:
         env = ClipReward(env)
 
-    if config.reward_every_frame:
-        env = RewardEveryFrame(env, reward=config.reward_every_frame, max_reward=config.max_reward_every_frame)
+    wrap_continuous_reward_wrapper_based_on_config(env, config)
 
     env = JpegWrapper(env, transform2string=config.transform2string)
     if config.game_wrapper:
@@ -232,39 +231,6 @@ class ClipReward(gym.RewardWrapper):
 
     def reward(self, reward):
         return np.clip(reward, self.min_reward, self.max_reward)
-
-class RewardEveryFrame(gym.Wrapper):
-    def __init__(self, env: gym.Env, reward: float = 0.01, max_reward: float = 0.25):
-        """
-        Arguments:
-            - env (:obj:`gym.Env`): The environment to wrap.
-        """
-        super().__init__(env)
-        self.reward = reward
-        self.max_reward = max_reward
-        self.current_enc_reward = 0.
-
-    def step(self, action):
-        observation, reward, done, info = self.env.step(action)
-
-        if reward != 0.:
-            if reward > 0.:
-                reward -= self.current_enc_reward * 2 # The agent must try to get real reward as soon as possible
-                if reward < 0.:
-                    reward = self.reward * 2
-
-            self.current_enc_reward = 0.
-        elif self.current_enc_reward < self.max_reward:
-            self.current_enc_reward += self.reward
-            reward += self.reward
-        else:
-            reward -= self.reward
-
-        return observation, reward, done, info
-
-    def reset(self, **kwargs):
-        self.current_enc_reward = 0.
-        return self.env.reset(**kwargs)
 
 class UniqueNameResetRecordVideo(RecordVideo):
     def __init__(self, *args, **kwargs):

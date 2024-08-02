@@ -54,6 +54,11 @@ retro_unizero_config = dict(
         manager=dict(shared_memory=False, ),
         save_replay=True,
         replay_path='/mnt/d/source/LightZero/data_unizero/replay',
+        continous_reward_wrapper=dict(
+            enabled=True, # Enable only if the game requires a mandatory action. An agent in a game can't just do nothing
+            reward=0.001,
+            max_reward=0.25
+        ),
         # battle_mode='self_play_mode',
         # TODO: only for debug
         # collect_max_episode_steps=int(50),
@@ -63,6 +68,7 @@ retro_unizero_config = dict(
         model=dict(
             observation_shape=observation_shape,
             action_space_size=action_space_size,
+            use_optimized_representation=True, # Use optimized version of RepresentationModel
             world_model_cfg=dict(
                 max_blocks=num_unroll_steps,
                 max_tokens=2 * num_unroll_steps,  # NOTE: each timestep has 2 tokens: obs and action
@@ -85,7 +91,7 @@ retro_unizero_config = dict(
             ),
         ),
         # (str) The path of the pretrained model. If None, the model will be initialized by the default model.
-        model_path='/mnt/d/source/LightZero/data_unizero/Airs_stack1_unizero_upcNone-rr0.25_H10_bs32_seed1722249408/ckpt/ckpt_best.pth.tar',
+        model_path=None,
         num_unroll_steps=num_unroll_steps,
         update_per_collect=update_per_collect,
         replay_ratio=replay_ratio,

@@ -17,6 +17,7 @@ from gym.wrappers import RecordVideo
 import retro
 import atomics
 import threading
+from lzero.envs.wrappers.continuous_reward_wrapper import wrap_continuous_reward_wrapper_based_on_config
 
 
 # only for reference now
@@ -121,7 +122,9 @@ def wrap_lightzero(config: EasyDict, episode_life: bool, clip_rewards: bool) -> 
     if config.scale:
         env = ScaledFloatFrameWrapper(env)
     if clip_rewards:
-        env = ClipRewardWrapper(env)
+        env = ClipReward(env)
+
+    wrap_continuous_reward_wrapper_based_on_config(env, config)
 
     env = JpegWrapper(env, transform2string=config.transform2string)
     if config.game_wrapper:
@@ -265,6 +268,15 @@ class WarpFrame(gym.ObservationWrapper):
 
         return obs
 
+class ClipReward(gym.RewardWrapper):
+    def __init__(self, env, min_reward = -1.0, max_reward=1.0):
+        super().__init__(env)
+        self.min_reward = min_reward
+        self.max_reward = max_reward
+        self.reward_range = (min_reward, max_reward)
+
+    def reward(self, reward):
+        return np.clip(reward, self.min_reward, self.max_reward)
 
 class JpegWrapper(gym.Wrapper):
     """
