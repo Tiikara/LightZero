@@ -4,6 +4,7 @@ from functools import partial
 from typing import Tuple, Optional
 
 import torch
+import torch.nn as nn
 from ding.config import compile_config
 from ding.envs import create_env_manager
 from ding.envs import get_vec_env_setting
@@ -21,6 +22,26 @@ from lzero.worker import MuZeroCollector as Collector
 from lzero.worker import MuZeroEvaluator as Evaluator
 from .utils import random_collect
 
+class DropoutModelChanger:
+    def __init__(self, model):
+        self.dropouts = []
+
+        for name, module in model.named_modules():
+            if isinstance(module, nn.Dropout):
+                self.dropouts.append(
+                    dict(
+                        module = module,
+                        original_p = module.p
+                    )
+                )
+
+    def change(self, changer):
+        for dropout in self.dropouts:
+            dropout['module'].p = changer(dropout['original_p'], dropout['module'].p)
+
+    def revert(self):
+        for dropout in self.dropouts:
+            dropout['module'].p = dropout['original_p']
 
 def train_unizero(
         input_cfg: Tuple[dict, dict],
@@ -166,17 +187,42 @@ def train_unizero(
                 )
                 continue
 
-            for i in range(update_per_collect):
-                train_data = replay_buffer.sample(batch_size, policy)
-                if cfg.policy.reanalyze_ratio > 0 and i % 20 == 0:
-                    # Clear caches and precompute positional embedding matrices
-                    policy.recompute_pos_emb_diff_and_clear_cache()  # TODO
+            if cfg.policy.use_late_dropout is not True:
+                for i in range(update_per_collect):
+                    train_data = replay_buffer.sample(batch_size, policy)
+                    if cfg.policy.reanalyze_ratio > 0 and i % 20 == 0:
+                        # Clear caches and precompute positional embedding matrices
+                        policy.recompute_pos_emb_diff_and_clear_cache()  # TODO
 
-                train_data.append({'train_which_component': 'transformer'})
-                log_vars = learner.train(train_data, collector.envstep)
+                    train_data.append({'train_which_component': 'transformer'})
+                    log_vars = learner.train(train_data, collector.envstep)
 
-                if cfg.policy.use_priority:
-                    replay_buffer.update_priority(train_data, log_vars[0]['value_priority_orig'])
+                    if cfg.policy.use_priority:
+                        replay_buffer.update_priority(train_data, log_vars[0]['value_priority_orig'])
+            else:
+                learn_model_dropout_changer = DropoutModelChanger(policy.get_learn_model())
+                target_model_dropout_changer = DropoutModelChanger(policy.get_target_model())
+
+                for epoch in range(3):
+                    if epoch > 0:
+                        learn_model_dropout_changer.change(lambda _, current_p: 0.2 if current_p == 0. else (current_p * 2 if current_p < 0.5 else current_p))
+                        target_model_dropout_changer.change(lambda _, current_p: 0.2 if current_p == 0. else (current_p * 2 if current_p < 0.5 else current_p))
+
+                    for i in range(update_per_collect):
+                        train_data = replay_buffer.sample(batch_size, policy)
+                        if cfg.policy.reanalyze_ratio > 0 and i % 20 == 0:
+                            # Clear caches and precompute positional embedding matrices
+                            policy.recompute_pos_emb_diff_and_clear_cache()  # TODO
+
+                        train_data.append({'train_which_component': 'transformer'})
+                        log_vars = learner.train(train_data, collector.envstep)
+
+                        if cfg.policy.use_priority:
+                            replay_buffer.update_priority(train_data, log_vars[0]['value_priority_orig'])
+
+                learn_model_dropout_changer.revert()
+                target_model_dropout_changer.revert()
+
 
         policy.recompute_pos_emb_diff_and_clear_cache()
 

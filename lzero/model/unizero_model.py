@@ -138,7 +138,12 @@ class UniZeroModel(nn.Module):
 
             self.tokenizer = Tokenizer(encoder=self.representation_network,
                                        decoder_network=self.decoder_network, with_lpips=with_lpips,)
-            self.world_model = WorldModel(config=world_model_cfg, tokenizer=self.tokenizer)
+            self.world_model = WorldModel(
+                config=world_model_cfg,
+                tokenizer=self.tokenizer,
+                obs_add_layers=self.representation_network.out_create_layers
+            )
+
             print(f'{sum(p.numel() for p in self.world_model.parameters())} parameters in agent.world_model')
             if self.tokenizer.decoder_network is not None and self.tokenizer.lpips is True:
                 print(f'{sum(p.numel() for p in self.world_model.parameters()) - sum(p.numel() for p in self.tokenizer.decoder_network.parameters()) - sum(p.numel() for p in self.tokenizer.lpips.parameters())} parameters in agent.world_model - (decoder_network and lpips)')

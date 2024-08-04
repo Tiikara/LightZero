@@ -622,7 +622,7 @@ class UniZeroPolicy(MuZeroPolicy):
             batch_action = []
             for i, env_id in enumerate(ready_env_id):
                 distributions, value = roots_visit_count_distributions[i], roots_values[i]
-                
+
                 if self._cfg.eps.eps_greedy_exploration_in_collect:
                     # eps greedy collect
                     action_index_in_legal_action_set, visit_count_distribution_entropy = select_action(
@@ -946,3 +946,10 @@ class UniZeroPolicy(MuZeroPolicy):
             model.world_model.precompute_pos_emb_diff_kv()
             model.world_model.clear_caches()
         torch.cuda.empty_cache()
+
+
+    def get_learn_model(self):
+        return self._learn_model
+
+    def get_target_model(self):
+        return self._target_model

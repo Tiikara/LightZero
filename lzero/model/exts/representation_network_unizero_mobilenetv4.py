@@ -88,7 +88,14 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
             bias=False
         )
 
-        self.sim_norm = SimNorm(simnorm_dim=group_size)
+        self.bn = nn.BatchNorm1d(self.embedding_dim)
+
+        self.act = nn.Sigmoid()
+
+        self.out_create_layers = [
+            # lambda: nn.LayerNorm(self.embedding_dim),
+            # lambda: nn.Sigmoid()
+        ]
 
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -103,7 +110,8 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
 
         x = self.last_linear(x.reshape(-1, self.downsample_net_out_features))
 
-        # NOTE: very important for training stability.
-        x = self.sim_norm(x)
+        x = self.bn(x)
+
+        # x = self.act(x)
 
         return x

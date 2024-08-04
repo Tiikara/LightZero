@@ -32,7 +32,7 @@ class WorldModel(nn.Module):
             - a transformer, which processes the input sequences,
             - and heads, which generate the logits for observations, rewards, policy, and value.
     """
-    def __init__(self, config: TransformerConfig, tokenizer) -> None:
+    def __init__(self, config: TransformerConfig, tokenizer, obs_add_layers) -> None:
         """
         Overview:
             Initialize the WorldModel class.
@@ -67,8 +67,11 @@ class WorldModel(nn.Module):
 
         # Head modules
         self.head_rewards = self._create_head(self.act_tokens_pattern, self.support_size)
-        self.head_observations = self._create_head(self.all_but_last_latent_state_pattern, self.obs_per_embdding_dim,
-                                                   self.sim_norm)  # NOTE: we add a sim_norm to the head for observations
+        self.head_observations = self._create_head(
+            self.all_but_last_latent_state_pattern,
+            self.obs_per_embdding_dim,
+            obs_add_layers
+        )  # NOTE: we add a sim_norm to the head for observations
         self.head_policy = self._create_head(self.value_policy_tokens_pattern, self.action_space_size)
         self.head_value = self._create_head(self.value_policy_tokens_pattern, self.support_size)
 
@@ -111,7 +114,6 @@ class WorldModel(nn.Module):
         self.env_num = self.config.env_num
         self.num_layers = self.config.num_layers
         self.obs_per_embdding_dim = self.config.embed_dim
-        self.sim_norm = SimNorm(simnorm_dim=self.group_size)
 
     def _initialize_patterns(self) -> None:
         """Initialize patterns for block masks."""
@@ -122,15 +124,16 @@ class WorldModel(nn.Module):
         self.value_policy_tokens_pattern = torch.zeros(self.config.tokens_per_block)
         self.value_policy_tokens_pattern[-2] = 1
 
-    def _create_head(self, block_mask: torch.Tensor, output_dim: int, norm_layer=None) -> Head:
+    def _create_head(self, block_mask: torch.Tensor, output_dim: int, add_layers=None) -> Head:
         """Create head modules for the transformer."""
         modules = [
             nn.Linear(self.config.embed_dim, self.config.embed_dim),
             nn.GELU(approximate='tanh'),
             nn.Linear(self.config.embed_dim, output_dim)
         ]
-        if norm_layer:
-            modules.append(norm_layer)
+        if add_layers:
+            for add_layer in add_layers:
+                modules.append(add_layer())
         return Head(
             max_blocks=self.config.max_blocks,
             block_mask=block_mask,

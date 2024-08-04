@@ -82,7 +82,8 @@ atari_unizero_config = dict(
                 obs_type='image',
                 env_num=max(collector_env_num, evaluator_env_num),
                 # latent_recon_loss_weight=0.01,
-                # perceptual_loss_weight=10.
+                # perceptual_loss_weight=10.,
+                predict_latent_loss_type='mse'
             ),
         ),
         learn=dict(
@@ -92,6 +93,7 @@ atari_unizero_config = dict(
                 )
             ),
         ),
+        use_late_dropout=False,
         # (str) The path of the pretrained model. If None, the model will be initialized by the default model.
         model_path=None,
         num_unroll_steps=num_unroll_steps,
