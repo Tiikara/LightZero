@@ -106,7 +106,6 @@ class RepresentationNetworkUniZeroMobilenetV4Positional(nn.Module):
             96
         ]
 
-
         self.feature_extractors = nn.ModuleList([])
 
         current_size = observation_shape[1]
@@ -127,7 +126,7 @@ class RepresentationNetworkUniZeroMobilenetV4Positional(nn.Module):
                 self.embedding_dim,
                 bias=False
             ),
-            nn.BatchNorm2d(self.embedding_dim)
+            nn.BatchNorm1d(self.embedding_dim)
         )
 
         self.out_create_layers = [
@@ -147,9 +146,9 @@ class RepresentationNetworkUniZeroMobilenetV4Positional(nn.Module):
 
         flatten_features = []
 
-        for i, feature in enumerate(x):
+        for i, mobilenet_feature in enumerate(x):
             flatten_features.append(
-                self.feature_extractors[i](x)
+                self.feature_extractors[i](mobilenet_feature)
             )
 
         x = torch.cat(flatten_features, dim=1)
