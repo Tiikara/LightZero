@@ -36,17 +36,15 @@ class PositionalEncoding2DToFeatures(nn.Module):
             nn.BatchNorm2d(hidden_channels),
             activation,
             nn.Conv2d(hidden_channels, out_channels, kernel_size=1, bias=False),
-            nn.BatchNorm2d(out_channels)
+            nn.BatchNorm2d(out_channels),
+            activation
         )
-
-        self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         pos = self.positional_encoding(x)
         x = torch.cat([x, pos], dim=1)
         x = self.combine(x)
-        x = self.global_avg_pool(x).flatten(1)
-        return x
+        return x.flatten(1)
 
 class RepresentationNetworkUniZeroMobilenetV4Positional(nn.Module):
 
@@ -116,25 +114,36 @@ class RepresentationNetworkUniZeroMobilenetV4Positional(nn.Module):
 
         current_size = observation_shape[1]
 
+        self.out_channels = 0
+
         for mobilenet_channels_layer in mobilenet_channels_layers:
             current_size = current_size // 2
 
             self.feature_extractors.append(
                 PositionalEncoding2DToFeatures(
                     in_channels=mobilenet_channels_layer,
-                    out_channels=256,
+                    out_channels=16,
                     hidden_channels=64,
                     activation=activation
                 )
             )
 
+            self.out_channels += 16 * current_size * current_size
+
         self.head = nn.Sequential(
             nn.Linear(
-                256 * len(mobilenet_channels_layers),
+                self.out_channels,
                 self.embedding_dim,
                 bias=False
             ),
-            nn.BatchNorm1d(self.embedding_dim)
+            nn.BatchNorm1d(self.embedding_dim),
+            activation,
+            nn.Linear(
+                self.embedding_dim,
+                self.embedding_dim,
+                bias=False
+            ),
+            nn.BatchNorm1d(self.embedding_dim),
         )
 
         self.out_create_layers = [
