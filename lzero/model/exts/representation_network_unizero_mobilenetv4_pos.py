@@ -26,19 +26,25 @@ from torch import nn
 import timm
 
 class PositionalEncoding2DToFeatures(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, activation):
         super().__init__()
 
         self.positional_encoding = PositionalEncodingPermute2D(in_channels)
-        self.conv_combine = nn.Conv2d(in_channels * 2, out_channels, kernel_size=1, bias=False)
-        self.bn = nn.BatchNorm2d(out_channels)
+
+        self.combine = nn.Sequential(
+            nn.Conv2d(in_channels * 2, out_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(out_channels),
+            activation,
+            nn.Conv2d(out_channels, out_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(out_channels)
+        )
+
         self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         pos = self.positional_encoding(x)
         x = torch.cat([x, pos], dim=1)
-        x = self.conv_combine(x)
-        x = self.bn(x)
+        x = self.combine(x)
         x = self.global_avg_pool(x).flatten(1)
         return x
 
@@ -116,7 +122,8 @@ class RepresentationNetworkUniZeroMobilenetV4Positional(nn.Module):
             self.feature_extractors.append(
                 PositionalEncoding2DToFeatures(
                     in_channels=mobilenet_channels_layer,
-                    out_channels=512
+                    out_channels=512,
+                    activation=activation
                 )
             )
 
