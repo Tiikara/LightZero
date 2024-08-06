@@ -25,30 +25,46 @@ import torch
 from torch import nn
 import timm
 
-class PositionalEncoding2DToFeatures(nn.Module):
-    def __init__(self, in_channels, out_channels, hidden_channels, activation):
+class SpatialRelationModule(nn.Module):
+    def __init__(self, in_channels, activation, reduction=8):
         super().__init__()
 
-        self.positional_encoding = PositionalEncodingPermute2D(in_channels)
-
-        self.combine = nn.Sequential(
-            nn.Conv2d(in_channels * 2, hidden_channels, kernel_size=1, bias=False),
-            nn.BatchNorm2d(hidden_channels),
+        self.channel_attention = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels // reduction, kernel_size=1),
+            nn.BatchNorm2d(in_channels // reduction),
             activation,
-            nn.Conv2d(hidden_channels, out_channels, kernel_size=1, bias=False),
-            nn.BatchNorm2d(out_channels)
+            nn.Conv2d(in_channels // reduction, in_channels, kernel_size=1),
+            nn.BatchNorm2d(in_channels),
+            nn.Sigmoid()
         )
 
-        self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.spatial_attention = nn.Sequential(
+            nn.Conv2d(2, in_channels, kernel_size=7, padding=3),
+            nn.BatchNorm2d(1),
+            nn.Sigmoid()
+        )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        pos = self.positional_encoding(x)
-        x = torch.cat([x, pos], dim=1)
-        x = self.combine(x)
-        x = self.global_avg_pool(x).flatten(1)
-        return x
+    def forward(self, x):
+        # Channel attention
+        ca = self.channel_attention(x)
+        x = x * ca
 
-class RepresentationNetworkUniZeroMobilenetV4Positional(nn.Module):
+        # Spatial attention
+        avg_pool = torch.mean(x, dim=1, keepdim=True)
+        max_pool, _ = torch.max(x, dim=1, keepdim=True)
+        spatial = torch.cat([avg_pool, max_pool], dim=1)
+        spatial = self.spatial_attention(spatial)
+
+        # Apply spatial attention
+        x = x * spatial
+
+        # Global pooling
+        avg_pool = torch.mean(x, dim=[2, 3])
+        max_pool, _ = torch.max(x.view(x.size(0), x.size(1), -1), dim=2)
+
+        return torch.cat([avg_pool, max_pool], dim=1)
+
+class RepresentationNetworkUniZeroMobilenetV4Attention(nn.Module):
 
     def __init__(
             self,
@@ -114,23 +130,25 @@ class RepresentationNetworkUniZeroMobilenetV4Positional(nn.Module):
 
         self.feature_extractors = nn.ModuleList([])
 
+        features = 0
+
         current_size = observation_shape[1]
 
         for mobilenet_channels_layer in mobilenet_channels_layers:
             current_size = current_size // 2
 
             self.feature_extractors.append(
-                PositionalEncoding2DToFeatures(
+                SpatialRelationModule(
                     in_channels=mobilenet_channels_layer,
-                    out_channels=256,
-                    hidden_channels=64,
                     activation=activation
                 )
             )
 
+            features += mobilenet_channels_layer + current_size * current_size
+
         self.head = nn.Sequential(
             nn.Linear(
-                256 * len(mobilenet_channels_layers),
+                features,
                 self.embedding_dim,
                 bias=False
             ),
