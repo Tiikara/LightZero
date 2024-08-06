@@ -14,6 +14,7 @@ from lzero.model.common import SimNorm
 from lzero.model.common import NormByType
 from functools import partial
 from .efficientnet_v2 import MBConvConfig, MBConv, ConvBNAct
+from .capsnet_layers import PrimaryCaps, RoutingCaps
 
 import math
 from functools import partial
@@ -23,7 +24,7 @@ import torch
 from torch import nn
 import timm
 
-class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
+class RepresentationNetworkUniZeroMobilenetV4Capsnet(nn.Module):
 
     def __init__(
             self,
@@ -88,6 +89,11 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
             bias=False
         )
 
+        self.primary_caps = PrimaryCaps(
+            in_channels=128, kernel_size=3, capsule_size=(16, 8)
+        )
+        self.routing_caps = RoutingCaps(in_capsules=(16, 8), out_capsules=(10, 16))
+
         self.act = SimNorm(simnorm_dim=group_size)
 
         self.out_create_layers = [
@@ -104,6 +110,12 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
                 output width, H_ is output height.
         """
         x = self.downsample_net(x)[-1]
+
+        x = self.primary_caps(x)
+
+        x = self.routing_caps(x)
+
+        print(x.size())
 
         x = self.last_linear(x.reshape(-1, self.downsample_net_out_features))
 

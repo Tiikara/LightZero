@@ -82,6 +82,15 @@ class RepresentationNetworkUniZeroMobilenetV4PAN(nn.Module):
         self.activation = activation
         self.embedding_dim = embedding_dim
 
+        ##
+        # mobilenetv4_conv_small
+        ##
+        # in 224x224
+        # torch.Size([1, 32, 112, 112])
+        # torch.Size([1, 32, 56, 56])
+        # torch.Size([1, 64, 28, 28])
+        # torch.Size([1, 96, 14, 14])
+        # torch.Size([1, 960, 7, 7])
         self.downsample_net = timm.create_model(
             'mobilenetv4_conv_small.e2400_r224_in1k',
             pretrained=False,
@@ -93,30 +102,30 @@ class RepresentationNetworkUniZeroMobilenetV4PAN(nn.Module):
         )
 
         mobilenet_channels = [32, 32, 64, 96]
-        pan_channels = 64
+        self.pan_channels = 16
 
         self.lateral_convs = nn.ModuleList([
            nn.Sequential(
-               nn.Conv2d(c, pan_channels, kernel_size=1),
-               nn.BatchNorm2d(pan_channels)
+               nn.Conv2d(c, self.pan_channels, kernel_size=1),
+               nn.BatchNorm2d(self.pan_channels)
            ) for c in mobilenet_channels
         ])
 
         self.upsample_blocks = nn.ModuleList([
-            PixelShuffleUpsample(pan_channels, pan_channels, 2) for _ in range(3)
+            PixelShuffleUpsample(self.pan_channels, self.pan_channels, 2) for _ in range(3)
         ])
 
         self.pan_blocks = nn.ModuleList([
             PANBlock(
-                in_channels=pan_channels, out_channels=pan_channels, activation=activation
+                in_channels=self.pan_channels, out_channels=self.pan_channels, activation=activation
             ) for _ in mobilenet_channels
         ])
 
-        self.spatial_attention = SpatialAttention(pan_channels)
+        self.spatial_attention = SpatialAttention(self.pan_channels, activation=activation, norm_type=norm_type)
 
         self.head = nn.Sequential(
             nn.Linear(
-                pan_channels * 4,
+                self.pan_channels * 32 * 32,
                 self.embedding_dim,
                 bias=False
             ),
@@ -140,6 +149,6 @@ class RepresentationNetworkUniZeroMobilenetV4PAN(nn.Module):
 
         x = self.spatial_attention(x)
 
-        x = self.head(x)
+        x = self.head(x.reshape(-1, self.pan_channels * 32 * 32))
 
         return x
