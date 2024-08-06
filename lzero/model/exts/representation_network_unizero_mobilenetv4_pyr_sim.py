@@ -19,11 +19,13 @@ import math
 from functools import partial
 from collections import OrderedDict
 
+from .torch_encodings import PositionalEncodingPermute2D
+
 import torch
 from torch import nn
 import timm
 
-class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
+class RepresentationNetworkUniZeroMobilenetV4PirSym(nn.Module):
 
     def __init__(
             self,
@@ -74,23 +76,57 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
             'mobilenetv4_conv_small.e2400_r224_in1k',
             pretrained=True,
             features_only=True,
-            out_indices=[3], # 3 - [1, 96, width // 16, height // 16]
+            out_indices=[0, 1, 2, 3], # 3 - [1, 96, width // 16, height // 16]
             drop_rate=0.1,
             drop_path_rate=0.1,
             act_layer=lambda **kwargs: activation
         )
 
-        self.downsample_net_out_features = 96 * (self.observation_shape[1] // 16) * (self.observation_shape[2] // 16)
+        layers_to_bottleneck = [
+            (32, 1), # 32 * 32 * 1 = 1024
+            (32, 2), # 16 * 16 * 2 = 512
+            (64, 16), # 8 * 8 * 16 = 1024
+            (96, 96) # 4 * 4 * 96 = 1536
+        ]
 
-        self.last_linear = nn.Linear(
-            self.downsample_net_out_features,
-            self.embedding_dim,
-            bias=False
+
+        self.bottlenecks = nn.ModuleList([])
+        self.bottlenecks_sizes = []
+
+        current_size = observation_shape[1]
+
+        self.full_features = 0
+
+        for layer_to_bottleneck in layers_to_bottleneck:
+            current_size = current_size // 2
+
+            self.bottlenecks.append(
+                nn.Sequential(
+                    nn.Conv2d(
+                        in_channels=layer_to_bottleneck[0],
+                        out_channels=layer_to_bottleneck[1],
+                        kernel_size=1,
+                        bias=False
+                    ),
+                    nn.BatchNorm2d(layer_to_bottleneck[1]),
+                    activation
+                )
+            )
+
+            self.bottlenecks_sizes.append(
+                (current_size, layer_to_bottleneck[1])
+            )
+
+            self.full_features += layer_to_bottleneck[1] * current_size * current_size
+
+        self.head = nn.Sequential(
+            nn.Linear(
+                self.full_features,
+                self.embedding_dim,
+                bias=False
+            ),
+            SimNorm(simnorm_dim=group_size)
         )
-
-        self.bn = nn.BatchNorm1d(self.embedding_dim)
-
-        self.act = SimNorm(simnorm_dim=group_size)
 
         self.out_create_layers = [
             lambda: SimNorm(simnorm_dim=group_size)
@@ -105,10 +141,19 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
             - output (:obj:`torch.Tensor`): :math:`(B, C_out, W_, H_)`, where B is batch size, C_out is channel, W_ is \
                 output width, H_ is output height.
         """
-        x = self.downsample_net(x)[-1]
+        x = self.downsample_net(x)
 
-        x = self.last_linear(x.reshape(-1, self.downsample_net_out_features))
+        features = []
 
-        x = self.act(x)
+        for i, feature in enumerate(x):
+            size = self.bottlenecks_sizes[i]
+
+            features.append(
+                self.bottlenecks[i](feature).reshape(-1, size[0] * size[0] * size[1]) # WxHxC
+            )
+
+        x = torch.cat(features, dim=1)
+
+        x = self.head(x)
 
         return x

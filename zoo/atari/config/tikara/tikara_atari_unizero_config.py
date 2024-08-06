@@ -82,8 +82,7 @@ atari_unizero_config = dict(
                 obs_type='image',
                 env_num=max(collector_env_num, evaluator_env_num),
                 # latent_recon_loss_weight=0.01,
-                # perceptual_loss_weight=10.,
-                predict_latent_loss_type='mse'
+                # perceptual_loss_weight=10.
             ),
         ),
         learn=dict(

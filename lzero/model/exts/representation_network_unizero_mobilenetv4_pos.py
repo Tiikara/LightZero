@@ -19,11 +19,30 @@ import math
 from functools import partial
 from collections import OrderedDict
 
+from .torch_encodings import PositionalEncodingPermute2D
+
 import torch
 from torch import nn
 import timm
 
-class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
+class PositionalEncoding2DToFeatures(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+
+        self.positional_encoding = PositionalEncodingPermute2D(in_channels)
+        self.conv_combine = nn.Conv2d(in_channels * 2, out_channels, kernel_size=1, bias=False)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        pos = self.positional_encoding(x)
+        x = torch.cat([x, pos], dim=1)
+        x = self.conv_combine(x)
+        x = self.bn(x)
+        x = self.global_avg_pool(x).flatten(1)
+        return x
+
+class RepresentationNetworkUniZeroMobilenetV4Positional(nn.Module):
 
     def __init__(
             self,
@@ -74,26 +93,45 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
             'mobilenetv4_conv_small.e2400_r224_in1k',
             pretrained=True,
             features_only=True,
-            out_indices=[3], # 3 - [1, 96, width // 16, height // 16]
+            out_indices=[0, 1, 2, 3], # 3 - [1, 96, width // 16, height // 16]
             drop_rate=0.1,
             drop_path_rate=0.1,
             act_layer=lambda **kwargs: activation
         )
 
-        self.downsample_net_out_features = 96 * (self.observation_shape[1] // 16) * (self.observation_shape[2] // 16)
+        mobilenet_channels_layers = [
+            32,
+            32,
+            64,
+            96
+        ]
 
-        self.last_linear = nn.Linear(
-            self.downsample_net_out_features,
-            self.embedding_dim,
-            bias=False
+
+        self.feature_extractors = nn.ModuleList([])
+
+        current_size = observation_shape[1]
+
+        for mobilenet_channels_layer in mobilenet_channels_layers:
+            current_size = current_size // 2
+
+            self.feature_extractors.append(
+                PositionalEncoding2DToFeatures(
+                    in_channels=mobilenet_channels_layer,
+                    out_channels=512
+                )
+            )
+
+        self.head = nn.Sequential(
+            nn.Linear(
+                512 * len(mobilenet_channels_layers),
+                self.embedding_dim,
+                bias=False
+            ),
+            nn.BatchNorm2d(self.embedding_dim)
         )
 
-        self.bn = nn.BatchNorm1d(self.embedding_dim)
-
-        self.act = SimNorm(simnorm_dim=group_size)
-
         self.out_create_layers = [
-            lambda: SimNorm(simnorm_dim=group_size)
+            lambda: nn.LayerNorm(self.embedding_dim)
         ]
 
 
@@ -105,10 +143,17 @@ class RepresentationNetworkUniZeroMobilenetV4(nn.Module):
             - output (:obj:`torch.Tensor`): :math:`(B, C_out, W_, H_)`, where B is batch size, C_out is channel, W_ is \
                 output width, H_ is output height.
         """
-        x = self.downsample_net(x)[-1]
+        x = self.downsample_net(x)
 
-        x = self.last_linear(x.reshape(-1, self.downsample_net_out_features))
+        flatten_features = []
 
-        x = self.act(x)
+        for i, feature in enumerate(x):
+            flatten_features.append(
+                self.feature_extractors[i](x)
+            )
+
+        x = torch.cat(flatten_features, dim=1)
+
+        x = self.head(x)
 
         return x
