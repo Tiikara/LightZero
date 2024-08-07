@@ -104,10 +104,24 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
                 out_capsules_size=self.out_capsules,
                 bias=False
             ),
-            nn.Flatten()
+            nn.Flatten(),
+            nn.Linear(
+                self.embedding_dim,
+                self.embedding_dim,
+                bias=False
+            ),
+            activation,
+            nn.Linear(
+                self.embedding_dim,
+                self.embedding_dim,
+                bias=False
+            ),
+            SimNorm(simnorm_dim=group_size)
         )
 
-        self.out_create_layers = []
+        self.out_create_layers = [
+            lambda: SimNorm(simnorm_dim=group_size)
+        ]
 
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
