@@ -7,6 +7,9 @@ import torch.nn.functional as F
 # https://github.com/akhdanfadh/efficient-capsnet-pytorch
 #
 # https://arxiv.org/pdf/2101.12491
+#
+# EFFICIENT-CAPSNET: CAPSULE NETWORK WITH SELF-ATTENTION ROUTING
+# Vittorio Mazzia, Francesco Salvetti
 ##
 
 class Squash(nn.Module):
