@@ -93,18 +93,17 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         self.activation = activation
         self.embedding_dim = embedding_dim
 
-        out_channels = 64
         caps_channels = 256
         self.out_capsules = (32, 16)
 
         self.expand = nn.Sequential(
             nn.Conv2d(
-                in_channels=out_channels,
-                out_channels=caps_channels-out_channels,
+                in_channels=num_channels,
+                out_channels=caps_channels-num_channels,
                 kernel_size=1,
                 bias=False
             ),
-            nn.BatchNorm2d(caps_channels-out_channels),
+            nn.BatchNorm2d(caps_channels-num_channels),
             self.activation
         )
 
