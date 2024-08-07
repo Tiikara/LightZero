@@ -20,6 +20,7 @@ from functools import partial
 from collections import OrderedDict
 
 from lzero.model.common import DownSample
+from .capsnet_ext_modules import CapsInitialModule
 
 import torch
 from torch import nn
@@ -93,41 +94,17 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         self.activation = activation
         self.embedding_dim = embedding_dim
 
-        caps_channels = 256
-        self.out_capsules = (32, 16)
-
-        self.expand = nn.Sequential(
-            nn.Conv2d(
-                in_channels=num_channels,
-                out_channels=caps_channels-num_channels,
-                kernel_size=1,
-                bias=False
-            ),
-            nn.BatchNorm2d(caps_channels-num_channels),
-            self.activation
-        )
-
-        self.caps = nn.Sequential(
-            PrimaryCaps(
-                in_channels=caps_channels,
-                kernel_size=observation_shape[1] // 8,
-                capsule_size=(32, 8),
-                bias=False
-            ),
-            RoutingCaps(
-                in_capsules=(32, 8),
-                out_capsules=self.out_capsules,
-                bias=False
-            )
-        )
-
+        self.out_capsules = (32, self.embedding_dim / 32) # 32 x (embedding_dim / 32) = embedding_dim
         self.head = nn.Sequential(
-            nn.Linear(
-                self.out_capsules[0] * self.out_capsules[1],
-                self.embedding_dim,
+            CapsInitialModule(
+                in_channels=num_channels,
+                in_size=observation_shape[1] // 8,
+                activation = activation,
+                initial_capsule_size=(32, 8),
+                out_capsules_size=self.out_capsules,
                 bias=False
             ),
-            nn.BatchNorm1d(self.embedding_dim)
+            nn.Flatten()
         )
 
         self.out_create_layers = []
@@ -145,10 +122,4 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         for block in self.resblocks:
             x = block(x)
 
-        x = torch.cat([x, self.expand(x)], dim=1)
-
-        x = self.caps(x)
-
-        x = self.head(x.reshape(-1, self.out_capsules[0] * self.out_capsules[1]))
-
-        return x
+        return self.head(x)
