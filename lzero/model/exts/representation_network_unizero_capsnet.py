@@ -26,6 +26,24 @@ import torch
 from torch import nn
 import timm
 
+class SimNormLast(nn.Module):
+    def __init__(
+            self,
+            group_size,
+            first_size,
+            second_size
+    ) -> None:
+        super().__init__()
+
+        self.sim_norm = SimNorm(simnorm_dim=group_size)
+        self.first_size = first_size
+        self.second_size = second_size
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        first, second = torch.split(x, [self.first_size, self.second_size])
+
+        return torch.cat([first, self.sim_norm(second)], dim=1)
+
 class RepresentationNetworkUniZeroCapsnet(nn.Module):
 
     def __init__(
@@ -94,8 +112,10 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         self.activation = activation
         self.embedding_dim = embedding_dim
 
-        self.out_capsules = (32, self.embedding_dim // 32) # 32 x (embedding_dim / 32) = embedding_dim
-        self.head = nn.Sequential(
+        self.sm_classes_length = 32
+
+        self.out_capsules = (32, (self.embedding_dim - self.sm_classes_length) // 32) # 32 x (embedding_dim / 32) = embedding_dim
+        self.caps = nn.Sequential(
             CapsInitialModule(
                 in_channels=num_channels,
                 in_size=observation_shape[1] // 8,
@@ -103,24 +123,24 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
                 initial_capsule_size=(32, 8),
                 out_capsules_size=self.out_capsules,
                 bias=False
-            ),
-            nn.Flatten(),
+            )
+        )
+
+        self.sim_norm = nn.Sequential(
             nn.Linear(
-                self.embedding_dim,
-                self.embedding_dim,
-                bias=False
-            ),
-            activation,
-            nn.Linear(
-                self.embedding_dim,
-                self.embedding_dim,
+                self.out_capsules[0] * self.out_capsules[1],
+                self.sm_classes_length,
                 bias=False
             ),
             SimNorm(simnorm_dim=group_size)
         )
 
         self.out_create_layers = [
-            lambda: SimNorm(simnorm_dim=group_size)
+            lambda: SimNormLast(
+                group_size=group_size,
+                first_size=self.embedding_dim - self.sm_classes_length,
+                second_size=self.sm_classes_length
+            )
         ]
 
 
@@ -136,4 +156,7 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         for block in self.resblocks:
             x = block(x)
 
-        return self.head(x)
+        capsules = self.caps(x).reshape(-1, self.out_capsules[0] * self.out_capsules[1])
+        sim_norm = self.sim_norm(capsules)
+
+        return torch.cat([capsules, sim_norm], dim=1)

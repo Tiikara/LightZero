@@ -1007,6 +1007,18 @@ class WorldModel(nn.Module):
             # assert not torch.isinf(loss_obs).any(), "loss_obs contains Inf values"
             # for name, param in self.tokenizer.encoder.named_parameters():
             #     print('name, param.mean(), param.std():', name, param.mean(), param.std())
+        elif self.predict_latent_loss_type == 'mse_group_kl_capsule':
+            logits_capsules, logits_classes = torch.split(logits_observations, [self.embed_dim - 32, 32])
+            labels_capsules, labels_classes = torch.split(labels_observations, [self.embed_dim - 32, 32])
+
+            batch_size, num_features = logits_classes.shape
+            epsilon = 1e-6
+            logits_reshaped = logits_classes.reshape(batch_size, 32 // self.group_size, self.group_size) + epsilon
+            labels_reshaped = labels_classes.reshape(batch_size, 32 // self.group_size, self.group_size) + epsilon
+
+            loss_obs = F.kl_div(logits_reshaped.log(), labels_reshaped, reduction='none').sum(dim=-1).mean(dim=-1) + \
+                torch.nn.functional.l1_loss(logits_capsules, labels_capsules, reduction='none').mean(-1)
+
 
         # Apply mask to loss_obs
         mask_padding_expanded = batch['mask_padding'][:, 1:].contiguous().view(-1)
