@@ -94,7 +94,7 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         self.activation = activation
         self.embedding_dim = embedding_dim
 
-        self.out_capsules = (32, self.embedding_dim / 32) # 32 x (embedding_dim / 32) = embedding_dim
+        self.out_capsules = (32, self.embedding_dim // 32) # 32 x (embedding_dim / 32) = embedding_dim
         self.head = nn.Sequential(
             CapsInitialModule(
                 in_channels=num_channels,
