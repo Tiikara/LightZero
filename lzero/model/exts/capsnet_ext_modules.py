@@ -71,12 +71,12 @@ class CapsInitialModule(nn.Module):
                     in_channels=caps_channels,
                     kernel_size=in_size,
                     capsule_size=initial_capsule_size,
-                    bias=False
+                    bias=bias
                 ),
                 RoutingCaps(
                     in_capsules=initial_capsule_size,
                     out_capsules=self.out_capsules_size,
-                    bias=False
+                    bias=bias
                 )
             )
         )
