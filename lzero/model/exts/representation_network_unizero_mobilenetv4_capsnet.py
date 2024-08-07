@@ -81,23 +81,48 @@ class RepresentationNetworkUniZeroMobilenetV4Capsnet(nn.Module):
             act_layer=lambda **kwargs: activation
         )
 
-        self.downsample_net_out_features = 96 * (self.observation_shape[1] // 16) * (self.observation_shape[2] // 16)
+        out_mobilenet_channels = 96
+        caps_channels = 256
+        self.out_capsules = (32, 16)
 
-        self.last_linear = nn.Linear(
-            self.downsample_net_out_features,
-            self.embedding_dim,
-            bias=False
+        self.expand = nn.Sequential(
+            nn.Conv2d(
+                in_channels=out_mobilenet_channels,
+                out_channels=caps_channels-out_mobilenet_channels,
+                kernel_size=1,
+                bias=False
+            ),
+            nn.BatchNorm2d(caps_channels-out_mobilenet_channels),
+            self.activation
         )
 
-        self.primary_caps = PrimaryCaps(
-            in_channels=128, kernel_size=3, capsule_size=(16, 8)
+        self.caps = nn.Sequential(
+            PrimaryCaps(
+                in_channels=caps_channels,
+                kernel_size=observation_shape[1] // 16,
+                capsule_size=(32, 8),
+                bias=False
+            ),
+            RoutingCaps(
+                in_capsules=(32, 8),
+                out_capsules=self.out_capsules,
+                bias=False
+            )
         )
-        self.routing_caps = RoutingCaps(in_capsules=(16, 8), out_capsules=(10, 16))
 
-        self.act = SimNorm(simnorm_dim=group_size)
+        self.head = nn.Sequential(
+            nn.Linear(
+                self.out_capsules[0] * self.out_capsules[1],
+                self.embedding_dim,
+                bias=False
+            ),
+            nn.BatchNorm1d(self.embedding_dim),
+            # SimNorm(simnorm_dim=group_size)
+        )
 
         self.out_create_layers = [
-            lambda: SimNorm(simnorm_dim=group_size)
+            # lambda: nn.LayerNorm(self.embedding_dim)
+            # lambda: SimNorm(simnorm_dim=group_size)
         ]
 
 
@@ -111,14 +136,10 @@ class RepresentationNetworkUniZeroMobilenetV4Capsnet(nn.Module):
         """
         x = self.downsample_net(x)[-1]
 
-        x = self.primary_caps(x)
+        x = torch.cat([x, self.expand(x)], dim=1)
 
-        x = self.routing_caps(x)
+        x = self.caps(x)
 
-        print(x.size())
-
-        x = self.last_linear(x.reshape(-1, self.downsample_net_out_features))
-
-        x = self.act(x)
+        x = self.head(x.reshape(-1, self.out_capsules[0] * self.out_capsules[1]))
 
         return x

@@ -9,7 +9,7 @@ from .common import MZNetworkOutput, RepresentationNetworkUniZero, Representatio
     VectorDecoderForMemoryEnv, LatentEncoderForMemoryEnv, LatentDecoderForMemoryEnv, FeatureAndGradientHook
 from .unizero_world_models.tokenizer import Tokenizer
 from .unizero_world_models.world_model import WorldModel
-from .exts.representation_network_unizero_mobilenetv4_pos import RepresentationNetworkUniZeroMobilenetV4Positional
+from .exts.representation_network_unizero_mobilenetv4_capsnet import RepresentationNetworkUniZeroMobilenetV4Capsnet
 from .exts.latent_decoder_espcn import LatentDecoderESPCN
 
 # use ModelRegistry to register the model, for more details about ModelRegistry, please refer to DI-engine's document.
@@ -92,7 +92,7 @@ class UniZeroModel(nn.Module):
             print('==' * 20)
         elif world_model_cfg.obs_type == 'image':
             if use_optimized_representation:
-                self.representation_network = RepresentationNetworkUniZeroMobilenetV4Positional(
+                self.representation_network = RepresentationNetworkUniZeroMobilenetV4Capsnet(
                     observation_shape,
                     num_res_blocks,
                     activation=self.activation,

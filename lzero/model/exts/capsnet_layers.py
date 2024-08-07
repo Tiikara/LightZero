@@ -5,6 +5,8 @@ import torch.nn.functional as F
 
 ##
 # https://github.com/akhdanfadh/efficient-capsnet-pytorch
+#
+# https://arxiv.org/pdf/2101.12491
 ##
 
 class Squash(nn.Module):
@@ -26,6 +28,7 @@ class PrimaryCaps(nn.Module):
         kernel_size,
         capsule_size,
         stride=1,
+        bias=True
     ):
         super(PrimaryCaps, self).__init__()
         self.in_channels = in_channels
@@ -39,6 +42,7 @@ class PrimaryCaps(nn.Module):
             kernel_size=kernel_size,
             stride=stride,
             groups=in_channels,
+            bias=bias
         )
         self.squash = Squash()
 
@@ -49,7 +53,7 @@ class PrimaryCaps(nn.Module):
 
 
 class RoutingCaps(nn.Module):
-    def __init__(self, in_capsules, out_capsules):
+    def __init__(self, in_capsules, out_capsules, bias = True):
         super(RoutingCaps, self).__init__()
         self.N0, self.D0 = in_capsules
         self.N1, self.D1 = out_capsules
@@ -58,7 +62,10 @@ class RoutingCaps(nn.Module):
         # initialize routing parameters
         self.W = nn.Parameter(torch.Tensor(self.N1, self.N0, self.D0, self.D1))
         nn.init.kaiming_normal_(self.W)
-        self.b = nn.Parameter(torch.zeros(self.N1, self.N0, 1))
+
+        self.bias = bias
+        if self.bias:
+            self.b = nn.Parameter(torch.zeros(self.N1, self.N0, 1))
 
     def forward(self, x):
         ## prediction vectors
@@ -70,7 +77,10 @@ class RoutingCaps(nn.Module):
         c = torch.einsum("...ij,...kj->...i", u, u)  # (B, N1, N0)
         c = c[..., None]  # (B, N1, N0, 1) for bias broadcasting
         c = c / torch.sqrt(torch.tensor(self.D1).float())  # stabilize
-        c = torch.softmax(c, axis=1) + self.b
+        c = torch.softmax(c, axis=1)
+
+        if self.bias:
+            c += self.b
 
         ## new capsules
         s = torch.sum(u * c, dim=-2)  # (B, N1, D1)
