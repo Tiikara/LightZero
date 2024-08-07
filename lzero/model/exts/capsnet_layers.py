@@ -10,6 +10,9 @@ import torch.nn.functional as F
 #
 # EFFICIENT-CAPSNET: CAPSULE NETWORK WITH SELF-ATTENTION ROUTING
 # Vittorio Mazzia, Francesco Salvetti
+#
+# Modifications:
+# (1) Added Bias property
 ##
 
 class Squash(nn.Module):
