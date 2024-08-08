@@ -14,7 +14,7 @@ from lzero.model.common import SimNorm
 from lzero.model.common import NormByType
 from functools import partial
 from .efficientnet_v2 import MBConvConfig, MBConv, ConvBNAct
-from .capsnet_layers import PrimaryCaps, RoutingCaps
+from .capsnet_layers import PrimaryCaps, RoutingCaps, Squash
 import math
 from functools import partial
 from collections import OrderedDict
@@ -22,27 +22,57 @@ from collections import OrderedDict
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule
 
+
 import torch
 from torch import nn
 import timm
+
+class SquashLinear(nn.Module):
+    def __init__(
+            self,
+            capsules_size
+    ) -> None:
+        super().__init__()
+        self.squash = Squash()
+        self.capsules_size = capsules_size
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        shp = x.shape
+        if shp[1] != 0:
+            x = x.view(*shp[:-1], -1, self.capsules_size[0], self.capsules_size[1])
+            x = self.squash(x)
+            return x.view(*shp)
+        else:
+            return x
 
 class SimNormLast(nn.Module):
     def __init__(
             self,
             group_size,
             first_size,
-            second_size
+            second_size,
+            capsules_size
     ) -> None:
         super().__init__()
 
         self.sim_norm = SimNorm(simnorm_dim=group_size)
         self.first_size = first_size
         self.second_size = second_size
+        self.squash = SquashLinear(capsules_size=capsules_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        first, second = torch.split(x, [self.first_size, self.second_size])
+        if x.shape[1] != 0:
+            first, second = torch.split(x, [self.first_size, self.second_size], dim=-1)
 
-        return torch.cat([first, self.sim_norm(second)], dim=1)
+            first = self.squash(first)
+            second = self.sim_norm(second)
+
+            return torch.cat([
+                first,
+                second
+            ], dim=-1)
+        else:
+            return x
 
 class RepresentationNetworkUniZeroCapsnet(nn.Module):
 
@@ -139,7 +169,8 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
             lambda: SimNormLast(
                 group_size=group_size,
                 first_size=self.embedding_dim - self.sm_classes_length,
-                second_size=self.sm_classes_length
+                second_size=self.sm_classes_length,
+                capsules_size=self.out_capsules
             )
         ]
 

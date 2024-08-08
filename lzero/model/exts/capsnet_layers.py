@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import math
 
 ##
 # https://github.com/akhdanfadh/efficient-capsnet-pytorch
@@ -16,7 +16,7 @@ import torch.nn.functional as F
 ##
 
 class Squash(nn.Module):
-    def __init__(self, eps=1e-20):
+    def __init__(self, eps=1e-8):
         super(Squash, self).__init__()
         self.eps = eps
 
@@ -25,7 +25,6 @@ class Squash(nn.Module):
         coef = 1 - 1 / (torch.exp(norm) + self.eps)
         unit = x / (norm + self.eps)
         return coef * unit
-
 
 class PrimaryCaps(nn.Module):
     def __init__(
@@ -118,3 +117,18 @@ class CapsMask(nn.Module):
 
         masked = x * mask.unsqueeze(-1)
         return masked.view(x.shape[0], -1)  # reshape
+
+
+def caps_loss(predicted_capsules, true_capsules, alpha=0.5, eps=1e-6):
+    pred_norm = F.normalize(predicted_capsules, p=2, dim=-1)
+    true_norm = F.normalize(true_capsules, p=2, dim=-1)
+
+    pred_lengths = torch.norm(predicted_capsules, dim=-1)
+    true_lengths = torch.norm(true_capsules, dim=-1)
+    length_error = F.mse_loss(pred_lengths, true_lengths, reduction='none')
+
+    cos_sim = torch.sum(pred_norm * true_norm, dim=-1)
+    cos_sim = torch.clamp(cos_sim, -1 + eps, 1 - eps)
+    direction_error = torch.acos(cos_sim) / math.pi
+
+    return alpha * length_error + (1 - alpha) * direction_error
