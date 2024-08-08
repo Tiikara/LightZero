@@ -18,6 +18,7 @@ from .tokenizer import Tokenizer
 from .transformer import Transformer, TransformerConfig
 from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcache
 from .utils import WorldModelOutput, quantize_state
+from lzero.model.exts.capsnet_layers import caps_loss
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -1007,17 +1008,26 @@ class WorldModel(nn.Module):
             # assert not torch.isinf(loss_obs).any(), "loss_obs contains Inf values"
             # for name, param in self.tokenizer.encoder.named_parameters():
             #     print('name, param.mean(), param.std():', name, param.mean(), param.std())
-        elif self.predict_latent_loss_type == 'mse_group_kl_capsule':
-            logits_capsules, logits_classes = torch.split(logits_observations, [self.embed_dim - 32, 32])
-            labels_capsules, labels_classes = torch.split(labels_observations, [self.embed_dim - 32, 32])
+        elif self.predict_latent_loss_type == 'group_kl_capsule':
+            logits_capsules, logits_classes = torch.split(logits_observations, [self.embed_dim - 32, 32], dim=1)
+            labels_capsules, labels_classes = torch.split(labels_observations, [self.embed_dim - 32, 32], dim=1)
 
             batch_size, num_features = logits_classes.shape
             epsilon = 1e-6
             logits_reshaped = logits_classes.reshape(batch_size, 32 // self.group_size, self.group_size) + epsilon
             labels_reshaped = labels_classes.reshape(batch_size, 32 // self.group_size, self.group_size) + epsilon
 
-            loss_obs = F.kl_div(logits_reshaped.log(), labels_reshaped, reduction='none').sum(dim=-1).mean(dim=-1) + \
-                torch.nn.functional.l1_loss(logits_capsules, labels_capsules, reduction='none').mean(-1)
+            logits_capsules = logits_capsules.reshape(batch_size, 32, (self.embed_dim - 32) // 32)
+            labels_capsules = labels_capsules.reshape(batch_size, 32, (self.embed_dim - 32) // 32)
+
+            alpha = 0.99
+            loss_obs = (F.kl_div(logits_reshaped.log(), labels_reshaped, reduction='none').sum(dim=-1).mean(dim=-1) * (1 - alpha) +
+                       caps_loss(
+                           predicted_capsules=logits_capsules,
+                           true_capsules=labels_capsules,
+                           alpha=0.5,
+                           eps=epsilon
+                       ).mean(dim=-1) * alpha)
 
 
         # Apply mask to loss_obs
