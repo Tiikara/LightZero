@@ -4,6 +4,9 @@ import torch.nn.functional as F
 
 
 class CapSEM(nn.Module):
+    """
+    CapsNet Regularization based on SEM (https://arxiv.org/abs/2204.00616)
+    """
     def __init__(self, num_capsules, capsule_dim, num_groups, eps=1e-6, temperature=1.0):
         super().__init__()
 
