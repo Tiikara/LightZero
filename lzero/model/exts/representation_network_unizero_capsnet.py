@@ -26,51 +26,21 @@ from .capsnet_ext_modules import CapsInitialModule
 import torch
 from torch import nn
 import timm
+from .caps_sem import CapSEM
 
-class SquashLinear(nn.Module):
-    def __init__(
-            self,
-            capsules_size
-    ) -> None:
-        super().__init__()
-        self.squash = Squash()
-        self.capsules_size = capsules_size
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        shp = x.shape
-        if shp[1] != 0:
-            x = x.view(*shp[:-1], -1, self.capsules_size[0], self.capsules_size[1])
-            x = self.squash(x)
-            return x.view(*shp)
-        else:
-            return x
 
 class SimNormLast(nn.Module):
     def __init__(
             self,
-            group_size,
-            first_size,
-            second_size,
-            capsules_size
+            caps_sem
     ) -> None:
         super().__init__()
 
-        self.sim_norm = SimNorm(simnorm_dim=group_size)
-        self.first_size = first_size
-        self.second_size = second_size
-        self.squash = SquashLinear(capsules_size=capsules_size)
+        self.caps_sem = caps_sem
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if x.shape[1] != 0:
-            first, second = torch.split(x, [self.first_size, self.second_size], dim=-1)
-
-            first = self.squash(first)
-            second = self.sim_norm(second)
-
-            return torch.cat([
-                first,
-                second
-            ], dim=-1)
+            return self.caps_sem(x)
         else:
             return x
 
@@ -142,9 +112,9 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         self.activation = activation
         self.embedding_dim = embedding_dim
 
-        self.sm_classes_length = 32
+        assert self.embedding_dim % 32 == 0
 
-        self.out_capsules = (32, (self.embedding_dim - self.sm_classes_length) // 32) # 32 x (embedding_dim / 32) = embedding_dim
+        self.out_capsules = (32, self.embedding_dim // 32) # 32 x (embedding_dim / 32) = embedding_dim
         self.caps = nn.Sequential(
             CapsInitialModule(
                 in_channels=num_channels,
@@ -153,24 +123,21 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
                 initial_capsule_size=(32, 8),
                 out_capsules_size=self.out_capsules,
                 bias=False
-            )
-        )
-
-        self.sim_norm = nn.Sequential(
-            nn.Linear(
-                self.out_capsules[0] * self.out_capsules[1],
-                self.sm_classes_length,
-                bias=False
             ),
-            SimNorm(simnorm_dim=group_size)
+            CapSEM(
+                num_capsules=self.out_capsules[0],
+                capsule_dim=self.out_capsules[1],
+                num_groups=8
+            )
         )
 
         self.out_create_layers = [
             lambda: SimNormLast(
-                group_size=group_size,
-                first_size=self.embedding_dim - self.sm_classes_length,
-                second_size=self.sm_classes_length,
-                capsules_size=self.out_capsules
+                CapSEM(
+                    num_capsules=self.out_capsules[0],
+                    capsule_dim=self.out_capsules[1],
+                    num_groups=8
+                )
             )
         ]
 
@@ -187,7 +154,6 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         for block in self.resblocks:
             x = block(x)
 
-        capsules = self.caps(x).reshape(-1, self.out_capsules[0] * self.out_capsules[1])
-        sim_norm = self.sim_norm(capsules)
+        x = self.caps(x)
 
-        return torch.cat([capsules, sim_norm], dim=1)
+        return x.reshape(-1, self.out_capsules[0] * self.out_capsules[1])
