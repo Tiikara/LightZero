@@ -99,7 +99,7 @@ class UniZeroModel(nn.Module):
                     norm_type=norm_type,
                     embedding_dim=world_model_cfg.embed_dim,
                     group_size=world_model_cfg.group_size,
-                    num_capsules=world_model_cfg.world_model_cfg
+                    num_capsules=world_model_cfg.num_capsules
                 )
             else:
                 self.representation_network = RepresentationNetworkUniZero(
