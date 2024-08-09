@@ -118,6 +118,14 @@ class CapsMask(nn.Module):
         masked = x * mask.unsqueeze(-1)
         return masked.view(x.shape[0], -1)  # reshape
 
+def caps_dir_loss(predicted_capsules, true_capsules, eps=1e-6):
+    pred_norm = F.normalize(predicted_capsules, p=2, dim=-1)
+    true_norm = F.normalize(true_capsules, p=2, dim=-1)
+
+    cos_sim = torch.sum(pred_norm * true_norm, dim=-1)
+    cos_sim = torch.clamp(cos_sim, -1 + eps, 1 - eps)
+    return torch.acos(cos_sim) / math.pi
+
 
 def caps_loss(predicted_capsules, true_capsules, alpha=0.5, eps=1e-6):
     pred_norm = F.normalize(predicted_capsules, p=2, dim=-1)

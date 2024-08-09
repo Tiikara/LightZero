@@ -18,7 +18,7 @@ from .tokenizer import Tokenizer
 from .transformer import Transformer, TransformerConfig
 from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcache
 from .utils import WorldModelOutput, quantize_state
-from lzero.model.exts.capsnet_layers import caps_loss
+from lzero.model.exts.capsnet_layers import caps_dir_loss
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -1013,16 +1013,35 @@ class WorldModel(nn.Module):
             batch_size, num_features = logits_observations.shape
 
             assert self.embed_dim % self.num_capsules == 0
+            capsules_dim = self.embed_dim // self.num_capsules
 
-            logits_capsules = logits_observations.reshape(batch_size, self.num_capsules, self.embed_dim // self.num_capsules)
-            labels_capsules = labels_observations.reshape(batch_size, self.num_capsules, self.embed_dim // self.num_capsules)
+            epsilon = 1e-6
 
-            loss_obs = caps_loss(
-                           predicted_capsules=logits_capsules,
-                           true_capsules=labels_capsules,
-                           alpha=0.5,
-                           eps=1e-6
-                       ).mean(dim=-1)
+            logits_capsules = logits_observations.reshape(batch_size, self.num_capsules, capsules_dim)
+            labels_capsules = labels_observations.reshape(batch_size, self.num_capsules, capsules_dim)
+
+            assert self.num_capsules % self.group_size == 0
+            num_groups = self.num_capsules // self.group_size
+
+            logits_reshaped = logits_observations.reshape(batch_size, num_groups, self.group_size, capsules_dim)
+            labels_reshaped = labels_observations.reshape(batch_size, num_groups, self.group_size, capsules_dim)
+
+            logits_reshaped_norm = torch.norm(logits_reshaped, dim=-1) + epsilon
+            labels_reshaped_norm = torch.norm(labels_reshaped, dim=-1) + epsilon
+
+            dir_loss = caps_dir_loss(
+                predicted_capsules=logits_capsules,
+                true_capsules=labels_capsules,
+                eps=epsilon
+            ).mean(dim=-1)
+
+            length_loss = F.kl_div(
+                logits_reshaped_norm.log(),
+                labels_reshaped_norm,
+                reduction='none'
+            ).sum(dim=-1).mean(dim=-1)
+
+            loss_obs = dir_loss * 0.5 + length_loss * 0.5
 
 
         # Apply mask to loss_obs
