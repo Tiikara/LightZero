@@ -7,22 +7,22 @@ class CapSEM(nn.Module):
     """
     CapsNet Regularization based on SEM (https://arxiv.org/abs/2204.00616)
     """
-    def __init__(self, num_capsules, capsule_dim, num_groups, eps=1e-6, temperature=1.0):
+    def __init__(self, num_capsules, capsule_dim, group_size, eps=1e-6, temperature=1.0):
         super().__init__()
+
+        assert num_capsules % group_size == 0
 
         self.num_capsules = num_capsules
         self.capsule_dim = capsule_dim
-        self.num_groups = num_groups
+        self.num_groups = num_capsules // group_size
         self.temperature = temperature
         self.eps = eps
-
-        assert num_capsules % num_groups == 0
-        self.capsules_per_group = num_capsules // num_groups
+        self.group_size = group_size
 
     def forward(self, x):
         shp = x.shape
 
-        x = x.view(-1, self.num_groups, self.capsules_per_group, self.capsule_dim)
+        x = x.view(-1, self.num_groups, self.group_size, self.capsule_dim)
 
         norms = torch.norm(x, dim=-1)
 

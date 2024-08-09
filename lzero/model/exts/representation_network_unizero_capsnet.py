@@ -56,6 +56,7 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
             group_size: int = 8,
             downsample: bool = True,
             num_channels: int = 64,
+            num_capsules: int = 32
     ) -> None:
         """
         Overview:
@@ -112,22 +113,24 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         self.activation = activation
         self.embedding_dim = embedding_dim
 
-        assert self.embedding_dim % 32 == 0
+        assert self.embedding_dim % num_capsules == 0
 
-        self.out_capsules = (32, self.embedding_dim // 32) # 32 x (embedding_dim / 32) = embedding_dim
+        out_capsules_dim = self.embedding_dim // num_capsules
+
+        self.out_capsules = (num_capsules, out_capsules_dim) # num_capsules x (embedding_dim / num_capsules) = embedding_dim
         self.caps = nn.Sequential(
             CapsInitialModule(
                 in_channels=num_channels,
                 in_size=observation_shape[1] // 8,
                 activation = activation,
-                initial_capsule_size=(32, 8),
+                initial_capsule_size=self.out_capsules,
                 out_capsules_size=self.out_capsules,
                 bias=False
             ),
             CapSEM(
                 num_capsules=self.out_capsules[0],
                 capsule_dim=self.out_capsules[1],
-                num_groups=8
+                group_size=group_size
             )
         )
 
@@ -136,7 +139,7 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
                 CapSEM(
                     num_capsules=self.out_capsules[0],
                     capsule_dim=self.out_capsules[1],
-                    num_groups=8
+                    group_size=group_size
                 )
             )
         ]

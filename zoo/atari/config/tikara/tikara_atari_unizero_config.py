@@ -55,7 +55,7 @@ atari_unizero_config = dict(
         save_replay=True,
         replay_path='/mnt/d/source/LightZero/data_unizero/replay',
         continous_reward_wrapper=dict(
-            enabled=True, # Enable only if the game requires a mandatory action. An agent in a game can't just do nothing
+            enabled=False, # Enable only if the game requires a mandatory action. An agent in a game can't just do nothing
             reward=0.001,
             max_reward=0.25
         ),
@@ -67,7 +67,7 @@ atari_unizero_config = dict(
         model=dict(
             observation_shape=observation_shape,
             action_space_size=action_space_size,
-            use_optimized_representation=True, # Use optimized version of RepresentationModel
+            use_caps_net_representation=True, # Use CapsNet version of RepresentationModel
             use_latent_decoder_espcn=True, # More accurate model
             world_model_cfg=dict(
                 max_blocks=num_unroll_steps,
@@ -79,10 +79,13 @@ atari_unizero_config = dict(
                 num_layers=4,
                 num_heads=8,
                 embed_dim=768,
+                num_capsules=128,
                 obs_type='image',
                 env_num=max(collector_env_num, evaluator_env_num),
                 # latent_recon_loss_weight=0.01,
-                # perceptual_loss_weight=10.
+                # perceptual_loss_weight=10.,
+                # predict_latent_loss_type='mse'
+                predict_latent_loss_type = 'caps'
             ),
         ),
         learn=dict(

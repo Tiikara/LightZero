@@ -98,6 +98,7 @@ class WorldModel(nn.Module):
         self.predict_latent_loss_type = self.config.predict_latent_loss_type
         self.group_size = self.config.group_size
         self.num_groups = self.config.embed_dim // self.group_size
+        self.num_capsules = self.config.num_capsules
         self.obs_type = self.config.obs_type
         self.embed_dim = self.config.embed_dim
         self.num_heads = self.config.num_heads
@@ -1008,11 +1009,13 @@ class WorldModel(nn.Module):
             # assert not torch.isinf(loss_obs).any(), "loss_obs contains Inf values"
             # for name, param in self.tokenizer.encoder.named_parameters():
             #     print('name, param.mean(), param.std():', name, param.mean(), param.std())
-        elif self.predict_latent_loss_type == 'group_kl_capsule':
+        elif self.predict_latent_loss_type == 'caps':
             batch_size, num_features = logits_observations.shape
 
-            logits_capsules = logits_observations.reshape(batch_size, 32, self.embed_dim // 32)
-            labels_capsules = labels_observations.reshape(batch_size, 32, self.embed_dim // 32)
+            assert self.embed_dim % self.num_capsules == 0
+
+            logits_capsules = logits_observations.reshape(batch_size, self.num_capsules, self.embed_dim // self.num_capsules)
+            labels_capsules = labels_observations.reshape(batch_size, self.num_capsules, self.embed_dim // self.num_capsules)
 
             loss_obs = caps_loss(
                            predicted_capsules=logits_capsules,

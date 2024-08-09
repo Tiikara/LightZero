@@ -26,7 +26,7 @@ class UniZeroModel(nn.Module):
             downsample: bool = True,
             norm_type: Optional[str] = 'BN',
             world_model_cfg: EasyDict = None,
-            use_optimized_representation=False,
+            use_caps_net_representation=False,
             use_latent_decoder_espcn=False,
             *args,
             **kwargs
@@ -91,7 +91,7 @@ class UniZeroModel(nn.Module):
             print(f'{sum(p.numel() for p in self.tokenizer.encoder.parameters())} parameters in agent.tokenizer.encoder')
             print('==' * 20)
         elif world_model_cfg.obs_type == 'image':
-            if use_optimized_representation:
+            if use_caps_net_representation:
                 self.representation_network = RepresentationNetworkUniZeroCapsnet(
                     observation_shape,
                     num_res_blocks,
@@ -99,6 +99,7 @@ class UniZeroModel(nn.Module):
                     norm_type=norm_type,
                     embedding_dim=world_model_cfg.embed_dim,
                     group_size=world_model_cfg.group_size,
+                    num_capsules=world_model_cfg.world_model_cfg
                 )
             else:
                 self.representation_network = RepresentationNetworkUniZero(
@@ -114,7 +115,7 @@ class UniZeroModel(nn.Module):
 
             # TODO: we should change the output_shape to the real observation shape
             if world_model_cfg.latent_recon_loss_weight != 0. or world_model_cfg.perceptual_loss_weight != 0.:
-                if use_latent_decoder_espcn and use_optimized_representation:
+                if use_latent_decoder_espcn:
                     self.decoder_network = LatentDecoderESPCN(
                         embedding_dim=world_model_cfg.embed_dim,
                         output_shape=(3, 64, 64),
