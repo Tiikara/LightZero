@@ -22,7 +22,7 @@ from collections import OrderedDict
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule
 from .down_sample_pos import DownSamplePos
-from .down_sample_pos import ResBlockSummaryPositional
+from .down_sample_pos import ResCoordBlock
 
 
 import torch
@@ -107,7 +107,7 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
 
         self.resblocks = nn.ModuleList(
             [
-                ResBlockSummaryPositional(
+                ResCoordBlock(
                     in_channels=num_channels, activation=activation, norm_type=norm_type, res_type='basic', bias=False
                 ) for _ in range(num_res_blocks)
             ]
