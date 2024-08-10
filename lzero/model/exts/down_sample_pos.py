@@ -22,6 +22,7 @@ from collections import OrderedDict
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule
 from .torch_encodings import PositionalEncodingPermute2D, Summer
+from .coordconv import AddCoords
 
 import torch
 from torch import nn
@@ -80,8 +81,14 @@ class DownSamplePos(nn.Module):
         assert norm_type in ['BN', 'LN'], "norm_type must in ['BN', 'LN']"
 
         self.observation_shape = observation_shape
+
+        self.add_coords = AddCoords(
+            rank=2,
+            with_r=True
+        )
+
         self.conv1 = nn.Conv2d(
-            observation_shape[0],
+            observation_shape[0] + 3,
             out_channels // 2,
             kernel_size=3,
             stride=2,
@@ -144,6 +151,8 @@ class DownSamplePos(nn.Module):
             - output (:obj:`torch.Tensor`): :math:`(B, C_out, W_, H_)`, where B is batch size, C_out is channel, W_ is \
                 output width, H_ is output height.
         """
+        x = self.add_coords(x)
+
         x = self.conv1(x)
         x = self.norm1(x)
         x = self.activation(x)
