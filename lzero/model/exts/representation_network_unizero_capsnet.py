@@ -21,6 +21,8 @@ from collections import OrderedDict
 
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule
+from .down_sample_pos import DownSamplePos
+from .down_sample_pos import ResBlockSummaryPositional
 
 
 import torch
@@ -84,7 +86,7 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         self.observation_shape = observation_shape
         self.downsample = downsample
         if self.downsample:
-            self.downsample_net = DownSample(
+            self.downsample_net = DownSamplePos(
                 observation_shape,
                 num_channels,
                 activation=activation,
@@ -105,7 +107,7 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
 
         self.resblocks = nn.ModuleList(
             [
-                ResBlock(
+                ResBlockSummaryPositional(
                     in_channels=num_channels, activation=activation, norm_type=norm_type, res_type='basic', bias=False
                 ) for _ in range(num_res_blocks)
             ]
