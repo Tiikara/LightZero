@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
 from ding.torch_utils import MLP, ResBlock
-from ding.torch_utils.nn_module import conv2d_block
+from ding.torch_utils.network.nn_module import conv2d_block
 from ding.utils import SequenceType
 from ditk import logging
 from lzero.model.common import SimNorm
@@ -53,7 +53,8 @@ class ResBlockChannelled(nn.Module):
             - out_channels (:obj:`int`): Number of channels in the output tensor, default set to None, \
                 which means out_channels = in_channels.
         """
-        super(ResBlock, self).__init__()
+        super().__init__()
+
         self.act = activation
         if out_channels is None:
             out_channels = in_channels
@@ -105,24 +106,18 @@ class ResCoordBlock(nn.Module):
                 res_type = res_type,
                 bias=bias
             )
-        else:
+        elif res_type == 'basic':
             self.res_block = nn.Sequential(
                 ResBlockChannelled(
-                    in_channels = in_channels + 3,
-                    out_channels = in_channels,
-                    activation = activation,
-                    norm_type = norm_type,
-                    bias=bias
-                ),
-                ResBlock(
                     in_channels = in_channels + 3,
                     out_channels = out_channels,
                     activation = activation,
                     norm_type = norm_type,
-                    res_type = res_type,
                     bias=bias
                 )
             )
+        else:
+            raise res_type + ' not supported'
 
         self.add_coords = AddCoords(
             rank = 2,
