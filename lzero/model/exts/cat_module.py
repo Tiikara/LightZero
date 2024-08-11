@@ -8,7 +8,7 @@ class CatModule(nn.Module):
             dim
     ) -> None:
         super().__init__()
-        self.layer = layer,
+        self.layer = layer
         self.dim = dim
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
