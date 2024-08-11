@@ -67,6 +67,10 @@ atari_unizero_config = dict(
         model=dict(
             observation_shape=observation_shape,
             action_space_size=action_space_size,
+            representaion_model=dict(
+                type='capsnet_coord',
+                num_capsules=128
+            ),
             use_caps_net_representation=True, # Use CapsNet version of RepresentationModel
             use_latent_decoder_espcn=True, # More accurate model
             world_model_cfg=dict(

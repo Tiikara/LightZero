@@ -32,7 +32,7 @@ import timm
 from .caps_sem import CapSEM
 
 
-class RepresentationNetworkUniZeroCapsnet(nn.Module):
+class RepresentationNetworkUniZeroCapsnetCoord(nn.Module):
 
     def __init__(
             self,

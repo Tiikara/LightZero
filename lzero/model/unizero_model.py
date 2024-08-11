@@ -9,7 +9,7 @@ from .common import MZNetworkOutput, RepresentationNetworkUniZero, Representatio
     VectorDecoderForMemoryEnv, LatentEncoderForMemoryEnv, LatentDecoderForMemoryEnv, FeatureAndGradientHook
 from .unizero_world_models.tokenizer import Tokenizer
 from .unizero_world_models.world_model import WorldModel
-from .exts.representation_network_unizero_capsnet import RepresentationNetworkUniZeroCapsnet
+from .exts.build_representation_network_unizero import build_representation_network_unizero
 from .exts.latent_decoder_espcn import LatentDecoderESPCN
 
 # use ModelRegistry to register the model, for more details about ModelRegistry, please refer to DI-engine's document.
@@ -26,7 +26,7 @@ class UniZeroModel(nn.Module):
             downsample: bool = True,
             norm_type: Optional[str] = 'BN',
             world_model_cfg: EasyDict = None,
-            use_caps_net_representation=False,
+            representaion_model=None,
             use_latent_decoder_espcn=False,
             *args,
             **kwargs
@@ -91,15 +91,15 @@ class UniZeroModel(nn.Module):
             print(f'{sum(p.numel() for p in self.tokenizer.encoder.parameters())} parameters in agent.tokenizer.encoder')
             print('==' * 20)
         elif world_model_cfg.obs_type == 'image':
-            if use_caps_net_representation:
-                self.representation_network = RepresentationNetworkUniZeroCapsnet(
+            if representaion_model:
+                self.representation_network = build_representation_network_unizero(
                     observation_shape,
                     num_res_blocks,
                     activation=self.activation,
                     norm_type=norm_type,
                     embedding_dim=world_model_cfg.embed_dim,
                     group_size=world_model_cfg.group_size,
-                    num_capsules=world_model_cfg.num_capsules
+                    model_config=representaion_model
                 )
             else:
                 self.representation_network = RepresentationNetworkUniZero(
