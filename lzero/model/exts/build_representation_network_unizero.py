@@ -19,5 +19,7 @@ def build_representation_network_unizero(
             group_size = group_size,
             num_capsules = model_config.num_capsules
         )
+    else:
+        raise 'Not supported'
 
 
