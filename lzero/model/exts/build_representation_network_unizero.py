@@ -1,6 +1,7 @@
 from .representation_network_unizero_capsnet_coord import RepresentationNetworkUniZeroCapsnetCoord
 from .representation_network_unizero_capsnet import RepresentationNetworkUniZeroCapsnet
 from .representation_network_unizero_capsnet_forward import RepresentationNetworkUniZeroCapsnetForward
+from .representation_network_unizero_capsem_only import RepresentationNetworkUniZeroCapsSEMOnly
 
 def build_representation_network_unizero(
         observation_shape,
@@ -33,6 +34,16 @@ def build_representation_network_unizero(
         )
     elif model_config.type == 'capsnet_forward':
         return RepresentationNetworkUniZeroCapsnetForward(
+            observation_shape = observation_shape,
+            num_res_blocks = num_res_blocks,
+            activation = activation,
+            norm_type = norm_type,
+            embedding_dim = embedding_dim,
+            group_size = group_size,
+            num_capsules = model_config.num_capsules
+        )
+    elif model_config.type == 'capsem_only':
+        RepresentationNetworkUniZeroCapsSEMOnly(
             observation_shape = observation_shape,
             num_res_blocks = num_res_blocks,
             activation = activation,
