@@ -21,7 +21,7 @@ from collections import OrderedDict
 
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule
-from .down_sample_pos import DownSamplePos
+from .down_sample_pos import DownSampleFullCoord
 from .down_sample_pos import ResCoordBlock
 
 
@@ -86,7 +86,7 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         self.observation_shape = observation_shape
         self.downsample = downsample
         if self.downsample:
-            self.downsample_net = DownSamplePos(
+            self.downsample_net = DownSampleFullCoord(
                 observation_shape,
                 num_channels,
                 activation=activation,
