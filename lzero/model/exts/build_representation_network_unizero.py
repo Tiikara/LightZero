@@ -43,7 +43,7 @@ def build_representation_network_unizero(
             num_capsules = model_config.num_capsules
         )
     elif model_config.type == 'capsem_only':
-        RepresentationNetworkUniZeroCapsSEMOnly(
+        return RepresentationNetworkUniZeroCapsSEMOnly(
             observation_shape = observation_shape,
             num_res_blocks = num_res_blocks,
             activation = activation,
