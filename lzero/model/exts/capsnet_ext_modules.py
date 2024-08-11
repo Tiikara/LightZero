@@ -2,17 +2,8 @@ import torch
 from torch import nn
 
 from .capsnet_layers import PrimaryCaps, RoutingCaps
+from .cat_module import CatModule
 
-class CatModule(nn.Module):
-    def __init__(
-            self,
-            process_module
-    ) -> None:
-        super().__init__()
-        self.process_module = process_module
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.cat([x, self.process_module(x)], dim=1)
 
 class CapsInitialModule(nn.Module):
 
@@ -48,7 +39,8 @@ class CapsInitialModule(nn.Module):
                         ),
                         nn.BatchNorm2d(expand_channels),
                         self.activation
-                    )
+                    ),
+                    dim=1
                 )
             )
         elif in_channels > caps_channels:
