@@ -21,8 +21,8 @@ from collections import OrderedDict
 
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule
-from .down_sample_pos import DownSampleFullCoord
-from .down_sample_pos import ResCoordBlock
+from .down_sample_full_coord import DownSampleFullCoord
+from .down_sample_full_coord import ResCoordBlock
 
 
 import torch
