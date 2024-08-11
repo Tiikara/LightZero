@@ -23,6 +23,7 @@ from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule
 from .down_sample_full_coord import DownSampleFullCoord
 from .down_sample_full_coord import ResCoordBlock
+from .second_dim_check import SecondDimCheck
 
 
 import torch
@@ -30,21 +31,6 @@ from torch import nn
 import timm
 from .caps_sem import CapSEM
 
-
-class SimNormLast(nn.Module):
-    def __init__(
-            self,
-            caps_sem
-    ) -> None:
-        super().__init__()
-
-        self.caps_sem = caps_sem
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.shape[1] != 0:
-            return self.caps_sem(x)
-        else:
-            return x
 
 class RepresentationNetworkUniZeroCapsnet(nn.Module):
 
@@ -137,7 +123,7 @@ class RepresentationNetworkUniZeroCapsnet(nn.Module):
         )
 
         self.out_create_layers = [
-            lambda: SimNormLast(
+            lambda: SecondDimCheck(
                 CapSEM(
                     num_capsules=self.out_capsules[0],
                     capsule_dim=self.out_capsules[1],
