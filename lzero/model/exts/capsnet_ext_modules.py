@@ -3,6 +3,55 @@ from torch import nn
 
 from .capsnet_layers import PrimaryCaps, RoutingCaps
 from .cat_module import CatModule
+from .capsnet_layers import Squash
+
+class PrimaryCapsForward(nn.Module):
+    def __init__(
+            self,
+            capsule_size
+    ):
+        super().__init__()
+
+        self.num_capsules, self.dim_capsules = capsule_size
+        self.squash = Squash()
+
+    def forward(self, x):
+        x = x.permute(0, 2, 3, 1) # (batchsize, ch, x, y) -> (batchsize, x, y, ch)
+        x = x.view(-1, self.num_capsules, self.dim_capsules)  # reshape
+        return self.squash(x)
+
+class CapsInitialModuleForward(nn.Module):
+
+    def __init__(
+            self,
+            in_channels,
+            in_size,
+            activation: nn.Module = nn.GELU(approximate='tanh'),
+            out_capsules_size=(32, 16),
+            bias=True
+    ) -> None:
+        super().__init__()
+
+        self.activation = activation
+
+        initial_capsule_size = (in_size * in_size, in_channels)
+        self.out_capsules_size = out_capsules_size
+
+        self.caps = nn.Sequential(
+            nn.Sequential(
+                PrimaryCapsForward(
+                    capsule_size=initial_capsule_size,
+                ),
+                RoutingCaps(
+                    in_capsules=initial_capsule_size,
+                    out_capsules=self.out_capsules_size,
+                    bias=bias
+                )
+            )
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.caps(x)
 
 
 class CapsInitialModule(nn.Module):
