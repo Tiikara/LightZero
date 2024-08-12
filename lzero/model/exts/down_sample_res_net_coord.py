@@ -43,15 +43,6 @@ class DownSampleResNetCoord(nn.Module):
         """
         Overview:
             Define downSample convolution network. Encode the observation into hidden state.
-            This network is often used in video games like Atari. In board games like go and chess,
-            we don't need this module.
-        Arguments:
-            - observation_shape (:obj:`SequenceType`): The shape of observation space, e.g. [C, W, H]=[12, 96, 96]
-                for video games like atari, RGB 3 channel times stack 4 frames.
-            - out_channels (:obj:`int`): The output channels of output hidden state.
-            - activation (:obj:`nn.Module`): The activation function used in network, defaults to nn.ReLU(inplace=True). \
-                Use the inplace operation to speed up.
-            - norm_type (:obj:`Optional[str]`): The normalization type used in network, defaults to 'BN'.
         """
         super().__init__()
         assert norm_type in ['BN', 'LN'], "norm_type must in ['BN', 'LN']"
