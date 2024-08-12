@@ -76,7 +76,7 @@ class DownSampleResNetCoord(nn.Module):
             )
         ]
 
-        while current_size > 3:
+        while current_size > 4:
             new_channels = current_channels * 2
             current_size = current_size // 2
 
