@@ -1044,7 +1044,7 @@ class WorldModel(nn.Module):
 
             alpha = self.caps_direction_loss_weight / (self.caps_direction_loss_weight + 1.)
 
-            loss_obs = 3. * (dir_loss * alpha + length_loss * (1. - alpha))
+            loss_obs = dir_loss * alpha + length_loss * (1. - alpha)
 
 
         # Apply mask to loss_obs

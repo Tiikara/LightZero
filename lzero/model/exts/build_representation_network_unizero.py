@@ -4,6 +4,7 @@ from .representation_network_unizero_capsnet_forward import RepresentationNetwor
 from .representation_network_unizero_capsem_only import RepresentationNetworkUniZeroCapsSEMOnly
 from .representation_network_unizero_capsnet_pos import RepresentationNetworkUniZeroCapsnetPositional
 from .representation_network_unizero_pos import RepresentationNetworkUniZeroPositional
+from .representation_network_unizero_capsnet_squashless import RepresentationNetworkUniZeroCapsnetSquashless
 
 def build_representation_network_unizero(
         observation_shape,
@@ -72,6 +73,16 @@ def build_representation_network_unizero(
             norm_type = norm_type,
             embedding_dim = embedding_dim,
             group_size = group_size
+        )
+    elif model_config.type == 'capsnet_squashless':
+        return RepresentationNetworkUniZeroCapsnetSquashless(
+            observation_shape = observation_shape,
+            num_res_blocks = num_res_blocks,
+            activation = activation,
+            norm_type = norm_type,
+            embedding_dim = embedding_dim,
+            group_size = group_size,
+            num_capsules = model_config.num_capsules
         )
     else:
         raise 'Not supported'
