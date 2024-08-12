@@ -68,7 +68,7 @@ atari_unizero_config = dict(
             observation_shape=observation_shape,
             action_space_size=action_space_size,
             representaion_model=dict(
-                type='capsem_only',
+                type='capsnet',
                 num_capsules=128
             ),
             use_caps_net_representation=True, # Use CapsNet version of RepresentationModel
@@ -90,7 +90,7 @@ atari_unizero_config = dict(
                 # perceptual_loss_weight=10.,
                 # predict_latent_loss_type='mse'
                 predict_latent_loss_type = 'caps',
-                caps_direction_loss_weight=1.
+                caps_direction_loss_weight=2.
             ),
         ),
         learn=dict(

@@ -18,7 +18,7 @@ from .tokenizer import Tokenizer
 from .transformer import Transformer, TransformerConfig
 from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcache
 from .utils import WorldModelOutput, quantize_state
-from lzero.model.exts.capsnet_layers import caps_dir_loss
+from lzero.model.exts.capsnet_layers import caps_dir_loss, caps_dir_loss_se
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -1030,7 +1030,7 @@ class WorldModel(nn.Module):
             logits_reshaped_norm = torch.norm(logits_reshaped, dim=-1) + epsilon
             labels_reshaped_norm = torch.norm(labels_reshaped, dim=-1) + epsilon
 
-            dir_loss = caps_dir_loss(
+            dir_loss = caps_dir_loss_se(
                 predicted_capsules=logits_capsules,
                 true_capsules=labels_capsules,
                 eps=epsilon

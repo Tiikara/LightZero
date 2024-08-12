@@ -124,7 +124,17 @@ def caps_dir_loss(predicted_capsules, true_capsules, eps=1e-6):
 
     cos_sim = torch.sum(pred_norm * true_norm, dim=-1)
     cos_sim = torch.clamp(cos_sim, -1 + eps, 1 - eps)
+
     return torch.acos(cos_sim) / math.pi
+
+def caps_dir_loss_se(predicted_capsules, true_capsules, eps=1e-6):
+    angle = caps_dir_loss(
+        predicted_capsules = predicted_capsules,
+        true_capsules = true_capsules,
+        eps = eps
+    )
+
+    return angle**2
 
 
 def caps_loss(predicted_capsules, true_capsules, alpha=0.5, eps=1e-6):
