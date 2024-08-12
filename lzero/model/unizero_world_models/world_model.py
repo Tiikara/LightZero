@@ -100,6 +100,7 @@ class WorldModel(nn.Module):
         self.num_groups = self.config.embed_dim // self.group_size
         self.num_capsules = self.config.num_capsules
         self.caps_direction_loss_weight = self.config.caps_direction_loss_weight
+        self.obs_loss_weight = self.config.obs_loss_weight
         self.obs_type = self.config.obs_type
         self.embed_dim = self.config.embed_dim
         self.num_heads = self.config.num_heads
@@ -1045,6 +1046,7 @@ class WorldModel(nn.Module):
             alpha = self.caps_direction_loss_weight / (self.caps_direction_loss_weight + 1.)
 
             loss_obs = dir_loss * alpha + length_loss * (1. - alpha)
+            loss_obs *= self.obs_loss_weight
 
 
         # Apply mask to loss_obs

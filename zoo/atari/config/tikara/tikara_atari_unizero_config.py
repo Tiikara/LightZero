@@ -68,10 +68,10 @@ atari_unizero_config = dict(
             observation_shape=observation_shape,
             action_space_size=action_space_size,
             representaion_model=dict(
-                type='capsnet',
+                type='capsnet_res_downsample_coord',
                 num_capsules=128
             ),
-            use_latent_decoder_espcn=True, # More accurate model
+            use_latent_decoder_espcn=True,  # More accurate model
             world_model_cfg=dict(
                 max_blocks=num_unroll_steps,
                 max_tokens=2 * num_unroll_steps,  # NOTE: each timestep has 2 tokens: obs and action
@@ -88,8 +88,9 @@ atari_unizero_config = dict(
                 # latent_recon_loss_weight=0.01,
                 # perceptual_loss_weight=10.,
                 # predict_latent_loss_type='mse'
-                predict_latent_loss_type = 'caps',
-                caps_direction_loss_weight=2.
+                predict_latent_loss_type='caps',
+                caps_direction_loss_weight=2.,
+                obs_loss_weight=1.
             ),
         ),
         learn=dict(
