@@ -71,7 +71,6 @@ atari_unizero_config = dict(
                 type='capsnet',
                 num_capsules=128
             ),
-            use_caps_net_representation=True, # Use CapsNet version of RepresentationModel
             use_latent_decoder_espcn=True, # More accurate model
             world_model_cfg=dict(
                 max_blocks=num_unroll_steps,
