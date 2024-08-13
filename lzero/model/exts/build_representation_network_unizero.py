@@ -5,8 +5,8 @@ from .representation_network_unizero_capsem_only import RepresentationNetworkUni
 from .representation_network_unizero_capsnet_pos import RepresentationNetworkUniZeroCapsnetPositional
 from .representation_network_unizero_pos import RepresentationNetworkUniZeroPositional
 from .representation_network_unizero_capsnet_squashless import RepresentationNetworkUniZeroCapsnetSquashless
-from .representation_network_unizero_capsnet_res_downsample import \
-    RepresentationNetworkUniZeroCapsnetResDownsample
+from .representation_network_unizero_capsnet_downsample import \
+    RepresentationNetworkUniZeroCapsnetDownsample
 from .representation_network_unizero_res_downsample import RepresentationNetworkUniZeroResDownsample
 
 def build_representation_network_unizero(
@@ -87,23 +87,19 @@ def build_representation_network_unizero(
             group_size=group_size,
             num_capsules=model_config.num_capsules
         )
-    elif model_config.type == 'capsnet_res_downsample':
-        return RepresentationNetworkUniZeroCapsnetResDownsample(
+    elif model_config.type == 'downsample':
+        return RepresentationNetworkUniZeroCapsnetDownsample(
             observation_shape=observation_shape,
             activation=activation,
             norm_type=norm_type,
             embedding_dim=embedding_dim,
             group_size=group_size,
             num_capsules=model_config.num_capsules,
-            use_coords=model_config.use_coords,
-            start_channels=model_config.start_channels,
-            channels_scale=model_config.channels_scale,
-            num_blocks=model_config.num_blocks,
             use_linear_input_for_caps=model_config.use_linear_input_for_caps,
             double_linear_input_for_caps=model_config.double_linear_input_for_caps,
             use_routing=model_config.use_routing,
             use_squash_in_transformer=model_config.use_squash_in_transformer,
-            downsample_network_type=model_config.downsample_network_type
+            downsample_network_config=model_config.downsample_network
         )
     elif model_config.type == 'base_res_downsample':
         return RepresentationNetworkUniZeroResDownsample(

@@ -34,7 +34,7 @@ import timm
 from .caps_sem import CapSEM
 
 
-class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
+class RepresentationNetworkUniZeroCapsnetDownsample(nn.Module):
 
     def __init__(
             self,
@@ -44,16 +44,12 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
             embedding_dim: int = 256,
             group_size: int = 8,
             downsample: bool = True,
-            start_channels: int = 64,
-            use_coords: bool = False,
-            channels_scale: float = 2.,
             num_capsules: int = 32,
-            num_blocks: int = 1,
             use_linear_input_for_caps: bool = False,
             double_linear_input_for_caps: bool = False,
             use_routing: bool = True,
             use_squash_in_transformer: bool = False,
-            downsample_network_type: str = 'base'
+            downsample_network_config=None
     ) -> None:
         """
         Overview:
@@ -81,24 +77,26 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
         self.observation_shape = observation_shape
         self.downsample = downsample
 
-        if downsample_network_type == 'base':
+        if downsample_network_config.type == 'base':
             self.downsample_net = BaseDownSample(
                 observation_shape=observation_shape,
                 activation=activation,
                 norm_type=norm_type
             )
-        elif downsample_network_type == 'res_net':
+        elif downsample_network_config.type == 'res_net':
+            res_net_config = downsample_network_config.res_net
+
             self.downsample_net = DownSampleResNet(
                 observation_shape,
-                start_channels=start_channels,
+                start_channels=res_net_config.start_channels,
                 activation=activation,
                 norm_type=norm_type,
-                use_coords=use_coords,
-                channels_scale=channels_scale,
-                num_blocks=num_blocks
+                use_coords=res_net_config.use_coords,
+                channels_scale=res_net_config.channels_scale,
+                num_blocks=res_net_config.num_blocks
             )
         else:
-            raise "Not supported " + downsample_network_type
+            raise "Not supported " + downsample_network_config.type
 
         self.activation = activation
         self.embedding_dim = embedding_dim

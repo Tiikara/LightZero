@@ -69,12 +69,17 @@ atari_unizero_config = dict(
             observation_shape=observation_shape,
             action_space_size=action_space_size,
             representaion_model=dict(
-                type='capsnet_res_downsample',
+                type='downsample',
+                downsmaple_network_config=dict(
+                    type='base',
+                    res_net=dict(
+                        use_coords=False,
+                        start_channels=32,
+                        channels_scale=1.2,
+                        num_blocks=1,
+                    )
+                ),
                 num_capsules=128,
-                use_coords=False,
-                start_channels=32,
-                channels_scale=1.2,
-                num_blocks=1,
                 use_linear_input_for_caps=True,
                 double_linear_input_for_caps=False,
                 use_routing=False,
