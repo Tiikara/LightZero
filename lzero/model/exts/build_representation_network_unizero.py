@@ -98,7 +98,9 @@ def build_representation_network_unizero(
             use_coords=model_config.use_coords,
             start_channels=model_config.start_channels,
             channels_scale=model_config.channels_scale,
-            num_blocks=model_config.num_blocks
+            num_blocks=model_config.num_blocks,
+            use_linear_input_for_caps=model_config.use_linear_input_for_caps,
+            double_linear_input_for_caps=model_config.double_linear_input_for_caps
         )
     elif model_config.type == 'base_res_downsample':
         return RepresentationNetworkUniZeroResDownsample(

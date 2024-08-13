@@ -20,9 +20,10 @@ from functools import partial
 from collections import OrderedDict
 
 from lzero.model.common import DownSample
-from .capsnet_ext_modules import CapsInitialModule
+from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D
 from .second_dim_check import SecondDimCheck
 from .down_sample_res_net import DownSampleResNet
+from .reshape_last_dim_1d import ReshapeLastDim1D
 
 import torch
 from torch import nn
@@ -44,7 +45,9 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
             use_coords: bool = False,
             channels_scale: float = 2.,
             num_capsules: int = 32,
-            num_blocks: int = 1
+            num_blocks: int = 1,
+            use_linear_input_for_caps: bool = False,
+            double_linear_input_for_caps: bool = False
     ) -> None:
         """
         Overview:
@@ -91,21 +94,73 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
 
         # num_capsules x (embedding_dim / num_capsules) = embedding_dim
         self.out_capsules = (num_capsules, out_capsules_dim)
-        self.caps = nn.Sequential(
-            CapsInitialModule(
-                in_channels=self.downsample_net.out_features,
-                in_size=self.downsample_net.out_size,
-                activation=activation,
-                initial_capsule_size=self.out_capsules,
-                out_capsules_size=self.out_capsules,
-                bias=False
-            ),
-            CapSEM(
-                num_capsules=self.out_capsules[0],
-                capsule_dim=self.out_capsules[1],
-                group_size=group_size
+
+        if use_linear_input_for_caps:
+            caps = [
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                )
+            ]
+
+            if double_linear_input_for_caps:
+                caps += [
+                    nn.Linear(
+                        self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                        self.out_capsules[0] * self.out_capsules[1],
+                        bias=False
+                    ),
+                    activation,
+                    nn.Linear(
+                        self.out_capsules[0] * self.out_capsules[1],
+                        self.out_capsules[0] * self.out_capsules[1],
+                        bias=False
+                    )
+                ]
+            else:
+                caps += [
+                    nn.Linear(
+                        self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                        self.out_capsules[0] * self.out_capsules[1],
+                        bias=False
+                    )
+                ]
+
+            caps += [
+                CapsInitialModuleForward1D(
+                    initial_capsule_size=self.out_capsules,
+                    out_capsules_size=self.out_capsules,
+                    bias=False
+                ),
+                CapSEM(
+                    num_capsules=self.out_capsules[0],
+                    capsule_dim=self.out_capsules[1],
+                    group_size=group_size
+                ),
+                ReshapeLastDim1D(
+                    out_features=self.out_capsules[0] * self.out_capsules[1]
+                ),
+            ]
+
+            self.caps = nn.Sequential(*caps)
+        else:
+            self.caps = nn.Sequential(
+                CapsInitialModule(
+                    in_channels=self.downsample_net.out_features,
+                    in_size=self.downsample_net.out_size,
+                    activation=activation,
+                    initial_capsule_size=self.out_capsules,
+                    out_capsules_size=self.out_capsules,
+                    bias=False
+                ),
+                CapSEM(
+                    num_capsules=self.out_capsules[0],
+                    capsule_dim=self.out_capsules[1],
+                    group_size=group_size
+                ),
+                ReshapeLastDim1D(
+                    out_features=self.out_capsules[0] * self.out_capsules[1]
+                ),
             )
-        )
 
         self.out_create_layers = [
             lambda: SecondDimCheck(
@@ -127,6 +182,4 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
         """
         x = self.downsample_net(x)
 
-        x = self.caps(x)
-
-        return x.reshape(-1, self.out_capsules[0] * self.out_capsules[1])
+        return self.caps(x)
