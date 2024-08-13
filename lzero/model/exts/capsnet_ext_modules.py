@@ -5,6 +5,7 @@ from .capsnet_layers import PrimaryCaps, RoutingCaps
 from .cat_module import CatModule
 from .capsnet_layers import Squash
 
+
 class PrimaryCapsForward(nn.Module):
     def __init__(
             self,
@@ -19,6 +20,22 @@ class PrimaryCapsForward(nn.Module):
         x = x.permute(0, 2, 3, 1) # (batchsize, ch, x, y) -> (batchsize, x, y, ch)
         x = x.view(-1, self.num_capsules, self.dim_capsules)  # reshape
         return self.squash(x)
+
+
+class PrimaryCapsForward1D(nn.Module):
+    def __init__(
+            self,
+            capsule_size
+    ):
+        super().__init__()
+
+        self.num_capsules, self.dim_capsules = capsule_size
+        self.squash = Squash()
+
+    def forward(self, x):
+        x = x.view(-1, self.num_capsules, self.dim_capsules)  # reshape
+        return self.squash(x)
+
 
 class PrimaryCapsWithoutSquash(nn.Module):
     def __init__(
@@ -190,6 +207,32 @@ class CapsInitialModuleWithoutSquash(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.caps(x)
+
+
+class CapsInitialModuleForward1D(nn.Module):
+
+    def __init__(
+            self,
+            initial_capsule_size=(32, 8),
+            out_capsules_size=(32, 16),
+            bias=True
+    ) -> None:
+        super().__init__()
+
+        self.caps = nn.Sequential(
+            PrimaryCapsForward1D(
+                capsule_size=initial_capsule_size
+            ),
+            RoutingCaps(
+                in_capsules=initial_capsule_size,
+                out_capsules=out_capsules_size,
+                bias=bias
+            )
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.caps(x)
+
 
 class CapsInitialModule(nn.Module):
 
