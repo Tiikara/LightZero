@@ -20,7 +20,7 @@ from functools import partial
 from collections import OrderedDict
 
 from lzero.model.common import DownSample
-from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D
+from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, PrimaryCapsForward1D
 from .second_dim_check import SecondDimCheck
 from .down_sample_res_net import DownSampleResNet
 from .reshape_last_dim_1d import ReshapeLastDim1D
@@ -47,7 +47,8 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
             num_capsules: int = 32,
             num_blocks: int = 1,
             use_linear_input_for_caps: bool = False,
-            double_linear_input_for_caps: bool = False
+            double_linear_input_for_caps: bool = False,
+            use_routing: bool = True
     ) -> None:
         """
         Overview:
@@ -126,11 +127,21 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
                 ]
 
             caps += [
-                CapsInitialModuleForward1D(
-                    initial_capsule_size=self.out_capsules,
-                    out_capsules_size=self.out_capsules,
-                    bias=False
-                ),
+                PrimaryCapsForward1D(
+                    capsule_size=self.out_capsules
+                )
+            ]
+
+            if use_routing:
+                caps += [
+                    RoutingCaps(
+                        in_capsules=self.out_capsules,
+                        out_capsules=self.out_capsules,
+                        bias=False
+                    )
+                ]
+
+            caps += [
                 CapSEM(
                     num_capsules=self.out_capsules[0],
                     capsule_dim=self.out_capsules[1],
@@ -143,6 +154,8 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
 
             self.caps = nn.Sequential(*caps)
         else:
+            assert use_routing is True
+
             self.caps = nn.Sequential(
                 CapsInitialModule(
                     in_channels=self.downsample_net.out_features,
