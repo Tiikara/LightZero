@@ -102,7 +102,8 @@ def build_representation_network_unizero(
             use_linear_input_for_caps=model_config.use_linear_input_for_caps,
             double_linear_input_for_caps=model_config.double_linear_input_for_caps,
             use_routing=model_config.use_routing,
-            use_squash_in_transformer=model_config.use_squash_in_transformer
+            use_squash_in_transformer=model_config.use_squash_in_transformer,
+            downsample_network_type=model_config.downsample_network_type
         )
     elif model_config.type == 'base_res_downsample':
         return RepresentationNetworkUniZeroResDownsample(

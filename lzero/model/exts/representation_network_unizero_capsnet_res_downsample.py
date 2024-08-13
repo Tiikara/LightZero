@@ -26,6 +26,7 @@ from .down_sample_res_net import DownSampleResNet
 from .reshape_last_dim_1d import ReshapeLastDim1D
 from .return_shape_module import ReturnShapeModule
 from .reshape_last_dim import ReshapeLastDim
+from .base_down_sample import BaseDownSample
 
 import torch
 from torch import nn
@@ -51,7 +52,8 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
             use_linear_input_for_caps: bool = False,
             double_linear_input_for_caps: bool = False,
             use_routing: bool = True,
-            use_squash_in_transformer: bool = False
+            use_squash_in_transformer: bool = False,
+            downsample_network_type: str = 'base'
     ) -> None:
         """
         Overview:
@@ -79,15 +81,24 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
         self.observation_shape = observation_shape
         self.downsample = downsample
 
-        self.downsample_net = DownSampleResNet(
-            observation_shape,
-            start_channels=start_channels,
-            activation=activation,
-            norm_type=norm_type,
-            use_coords=use_coords,
-            channels_scale=channels_scale,
-            num_blocks=num_blocks
-        )
+        if downsample_network_type == 'base':
+            self.downsample_net = BaseDownSample(
+                observation_shape=observation_shape,
+                activation=activation,
+                norm_type=norm_type
+            )
+        elif downsample_network_type == 'res_net':
+            self.downsample_net = DownSampleResNet(
+                observation_shape,
+                start_channels=start_channels,
+                activation=activation,
+                norm_type=norm_type,
+                use_coords=use_coords,
+                channels_scale=channels_scale,
+                num_blocks=num_blocks
+            )
+        else:
+            raise "Not supported " + downsample_network_type
 
         self.activation = activation
         self.embedding_dim = embedding_dim

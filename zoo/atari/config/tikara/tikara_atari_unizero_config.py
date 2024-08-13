@@ -78,7 +78,8 @@ atari_unizero_config = dict(
                 use_linear_input_for_caps=True,
                 double_linear_input_for_caps=False,
                 use_routing=False,
-                use_squash_in_transformer=True
+                use_squash_in_transformer=True,
+                downsample_network_type='base'
             ),
             use_latent_decoder_espcn=True,  # More accurate model
             world_model_cfg=dict(
