@@ -70,7 +70,7 @@ atari_unizero_config = dict(
             action_space_size=action_space_size,
             representaion_model=dict(
                 type='capsnet_res_downsample',
-                num_capsules=16,
+                num_capsules=128,
                 use_coords=False,
                 start_channels=8,
                 channels_scale=2.,
@@ -87,7 +87,6 @@ atari_unizero_config = dict(
                 num_layers=4,
                 num_heads=8,
                 embed_dim=768,
-                num_capsules=16,
                 obs_type='image',
                 env_num=max(collector_env_num, evaluator_env_num),
                 # latent_recon_loss_weight=0.01,
@@ -96,7 +95,7 @@ atari_unizero_config = dict(
                 predict_latent_loss_type='caps',
                 caps_direction_loss_weight=2.,
                 value_loss_weight=1.,  # 0.25 - UniZero
-                obs_loss_weight=10.  # 10. - UniZero
+                obs_loss_weight=30.  # 10. - UniZero
             ),
         ),
         learn=dict(

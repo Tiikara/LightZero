@@ -33,7 +33,7 @@ class WorldModel(nn.Module):
             - a transformer, which processes the input sequences,
             - and heads, which generate the logits for observations, rewards, policy, and value.
     """
-    def __init__(self, config: TransformerConfig, tokenizer, obs_add_layers) -> None:
+    def __init__(self, config: TransformerConfig, representation_model_config, tokenizer, obs_add_layers) -> None:
         """
         Overview:
             Initialize the WorldModel class.
@@ -44,6 +44,7 @@ class WorldModel(nn.Module):
         super().__init__()
         self.tokenizer = tokenizer
         self.config = config
+        self.representation_model_config = representation_model_config
         self.transformer = Transformer(self.config)
 
         # Move all modules to the specified device
@@ -98,7 +99,6 @@ class WorldModel(nn.Module):
         self.predict_latent_loss_type = self.config.predict_latent_loss_type
         self.group_size = self.config.group_size
         self.num_groups = self.config.embed_dim // self.group_size
-        self.num_capsules = self.config.num_capsules
         self.caps_direction_loss_weight = self.config.caps_direction_loss_weight
         self.obs_loss_weight = self.config.obs_loss_weight
         self.value_loss_weight = self.config.value_loss_weight
@@ -1015,16 +1015,18 @@ class WorldModel(nn.Module):
         elif self.predict_latent_loss_type == 'caps':
             batch_size, num_features = logits_observations.shape
 
-            assert self.embed_dim % self.num_capsules == 0
-            capsules_dim = self.embed_dim // self.num_capsules
+            num_capsules = self.representation_model_config.num_capsules
+
+            assert self.embed_dim % num_capsules == 0
+            capsules_dim = self.embed_dim // num_capsules
 
             epsilon = 1e-6
 
-            logits_capsules = logits_observations.reshape(batch_size, self.num_capsules, capsules_dim)
-            labels_capsules = labels_observations.reshape(batch_size, self.num_capsules, capsules_dim)
+            logits_capsules = logits_observations.reshape(batch_size, num_capsules, capsules_dim)
+            labels_capsules = labels_observations.reshape(batch_size, num_capsules, capsules_dim)
 
-            assert self.num_capsules % self.group_size == 0
-            num_groups = self.num_capsules // self.group_size
+            assert num_capsules % self.group_size == 0
+            num_groups = num_capsules // self.group_size
 
             logits_reshaped = logits_observations.reshape(batch_size, num_groups, self.group_size, capsules_dim)
             labels_reshaped = labels_observations.reshape(batch_size, num_groups, self.group_size, capsules_dim)

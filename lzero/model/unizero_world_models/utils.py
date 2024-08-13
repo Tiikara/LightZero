@@ -154,6 +154,8 @@ class LossWithIntermediateLosses:
         self.reward_loss_weight = 1.
         self.policy_loss_weight = 1.
         self.ends_loss_weight = 0.
+        self.value_loss_weight = value_loss_weight
+        self.obs_loss_weight = obs_loss_weight
 
         self.latent_recon_loss_weight = latent_recon_loss_weight
         self.perceptual_loss_weight = perceptual_loss_weight

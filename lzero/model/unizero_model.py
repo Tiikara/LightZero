@@ -139,8 +139,10 @@ class UniZeroModel(nn.Module):
 
             self.tokenizer = Tokenizer(encoder=self.representation_network,
                                        decoder_network=self.decoder_network, with_lpips=with_lpips,)
+
             self.world_model = WorldModel(
                 config=world_model_cfg,
+                representation_model_config=representaion_model,
                 tokenizer=self.tokenizer,
                 obs_add_layers=self.representation_network.out_create_layers
             )
