@@ -5,8 +5,8 @@ from .representation_network_unizero_capsem_only import RepresentationNetworkUni
 from .representation_network_unizero_capsnet_pos import RepresentationNetworkUniZeroCapsnetPositional
 from .representation_network_unizero_pos import RepresentationNetworkUniZeroPositional
 from .representation_network_unizero_capsnet_squashless import RepresentationNetworkUniZeroCapsnetSquashless
-from .representation_network_unizero_capsnet_res_downsample_coord import \
-    RepresentationNetworkUniZeroCapsnetResDownsampleCoord
+from .representation_network_unizero_capsnet_res_downsample import \
+    RepresentationNetworkUniZeroCapsnetResDownsample
 
 
 def build_representation_network_unizero(
@@ -87,15 +87,16 @@ def build_representation_network_unizero(
             group_size=group_size,
             num_capsules=model_config.num_capsules
         )
-    elif model_config.type == 'capsnet_res_downsample_coord':
-        return RepresentationNetworkUniZeroCapsnetResDownsampleCoord(
+    elif model_config.type == 'capsnet_res_downsample':
+        return RepresentationNetworkUniZeroCapsnetResDownsample(
             observation_shape=observation_shape,
-            num_res_blocks=num_res_blocks,
             activation=activation,
             norm_type=norm_type,
             embedding_dim=embedding_dim,
             group_size=group_size,
-            num_capsules=model_config.num_capsules
+            num_capsules=model_config.num_capsules,
+            use_coords=model_config.use_coords,
+            start_channels=model_config.start_channels
         )
     else:
         raise 'Not supported'

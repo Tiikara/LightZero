@@ -33,12 +33,13 @@ from .caps_sem import CapSEM
 from typing import Union
 
 
-class DownSampleResNetCoord(nn.Module):
+class DownSampleResNet(nn.Module):
 
     def __init__(self, observation_shape: SequenceType,
-                 out_channels: int,
+                 start_channels: int,
                  activation: nn.Module = nn.ReLU(inplace=True),
                  norm_type: Optional[str] = 'BN',
+                 use_coords: bool = False
                  ) -> None:
         """
         Overview:
@@ -52,13 +53,13 @@ class DownSampleResNetCoord(nn.Module):
 
         assert observation_shape[1] % 2 == 0
 
-        current_channels = 32
+        current_channels = start_channels
         current_size = observation_shape[1] // 2
 
         downsamples = [
             AddCoords(
                 rank=2
-            ),
+            ) if use_coords else nn.Identity(),
             ResDownSampleBlock(
                 in_channels=observation_shape[0] + 2,
                 out_channels=current_channels,

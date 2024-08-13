@@ -22,7 +22,7 @@ from collections import OrderedDict
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule
 from .second_dim_check import SecondDimCheck
-from .down_sample_res_net_coord import DownSampleResNetCoord
+from .down_sample_res_net import DownSampleResNet
 
 import torch
 from torch import nn
@@ -30,18 +30,18 @@ import timm
 from .caps_sem import CapSEM
 
 
-class RepresentationNetworkUniZeroCapsnetResDownsampleCoord(nn.Module):
+class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
 
     def __init__(
             self,
             observation_shape: SequenceType = (3, 64, 64),
-            num_res_blocks: int = 1,
             activation: nn.Module = nn.GELU(approximate='tanh'),
             norm_type: str = 'BN',
             embedding_dim: int = 256,
             group_size: int = 8,
             downsample: bool = True,
-            num_channels: int = 64,
+            start_channels: int = 64,
+            use_coords: bool = False,
             num_capsules: int = 32
     ) -> None:
         """
@@ -70,11 +70,12 @@ class RepresentationNetworkUniZeroCapsnetResDownsampleCoord(nn.Module):
         self.observation_shape = observation_shape
         self.downsample = downsample
 
-        self.downsample_net = DownSampleResNetCoord(
+        self.downsample_net = DownSampleResNet(
             observation_shape,
-            num_channels,
+            start_channels=start_channels,
             activation=activation,
             norm_type=norm_type,
+            use_coords=use_coords
         )
 
         self.activation = activation
@@ -84,12 +85,13 @@ class RepresentationNetworkUniZeroCapsnetResDownsampleCoord(nn.Module):
 
         out_capsules_dim = self.embedding_dim // num_capsules
 
-        self.out_capsules = (num_capsules, out_capsules_dim) # num_capsules x (embedding_dim / num_capsules) = embedding_dim
+        # num_capsules x (embedding_dim / num_capsules) = embedding_dim
+        self.out_capsules = (num_capsules, out_capsules_dim)
         self.caps = nn.Sequential(
             CapsInitialModule(
                 in_channels=self.downsample_net.out_features,
                 in_size=self.downsample_net.out_size,
-                activation = activation,
+                activation=activation,
                 initial_capsule_size=self.out_capsules,
                 out_capsules_size=self.out_capsules,
                 bias=False
@@ -110,7 +112,6 @@ class RepresentationNetworkUniZeroCapsnetResDownsampleCoord(nn.Module):
                 )
             )
         ]
-
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
