@@ -67,6 +67,8 @@ class BaseDownSample(nn.Module):
         logging.info(f"Using norm type: {norm_type}")
         logging.info(f"Using activation type: {activation}")
 
+        assert observation_shape[1] == observation_shape[2]
+
         self.observation_shape = observation_shape
         self.downsample = downsample
         if self.downsample:
@@ -99,7 +101,7 @@ class BaseDownSample(nn.Module):
         self.activation = activation
 
         self.out_features = num_channels
-        self.out_size = (observation_shape[0] // 8, observation_shape[1] // 8)
+        self.out_size = observation_shape[1] // 8
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
