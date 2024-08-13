@@ -24,6 +24,8 @@ from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, 
 from .second_dim_check import SecondDimCheck
 from .down_sample_res_net import DownSampleResNet
 from .reshape_last_dim_1d import ReshapeLastDim1D
+from .return_shape_module import ReturnShapeModule
+from .reshape_last_dim import ReshapeLastDim
 
 import torch
 from torch import nn
@@ -48,7 +50,8 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
             num_blocks: int = 1,
             use_linear_input_for_caps: bool = False,
             double_linear_input_for_caps: bool = False,
-            use_routing: bool = True
+            use_routing: bool = True,
+            use_squash_in_transformer: bool = False
     ) -> None:
         """
         Overview:
@@ -175,15 +178,34 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
                 ),
             )
 
-        self.out_create_layers = [
-            lambda: SecondDimCheck(
-                CapSEM(
-                    num_capsules=self.out_capsules[0],
-                    capsule_dim=self.out_capsules[1],
-                    group_size=group_size
+        if use_squash_in_transformer:
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    ReturnShapeModule(
+                        nn.Sequential(
+                            ReshapeLastDim(
+                                out_shape=self.out_capsules
+                            ),
+                            Squash(),
+                            CapSEM(
+                                num_capsules=self.out_capsules[0],
+                                capsule_dim=self.out_capsules[1],
+                                group_size=group_size
+                            )
+                        )
+                    )
                 )
-            )
-        ]
+            ]
+        else:
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    CapSEM(
+                        num_capsules=self.out_capsules[0],
+                        capsule_dim=self.out_capsules[1],
+                        group_size=group_size
+                    )
+                )
+            ]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
