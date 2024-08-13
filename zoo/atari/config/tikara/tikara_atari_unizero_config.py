@@ -27,7 +27,7 @@ num_unroll_steps = 10
 # ==============================================================
 infer_context_length = 4
 
-observation_shape=(3, 64, 64)
+observation_shape = (3, 64, 64)
 
 # ====== only for debug =====
 # collector_env_num = 2
@@ -55,7 +55,8 @@ atari_unizero_config = dict(
         save_replay=True,
         replay_path='/mnt/d/source/LightZero/data_unizero/replay',
         continous_reward_wrapper=dict(
-            enabled=False, # Enable only if the game requires a mandatory action. An agent in a game can't just do nothing
+            enabled=False,
+            # Enable only if the game requires a mandatory action. An agent in a game can't just do nothing
             reward=0.001,
             max_reward=0.25
         ),
@@ -94,7 +95,8 @@ atari_unizero_config = dict(
                 # predict_latent_loss_type='mse'
                 predict_latent_loss_type='caps',
                 caps_direction_loss_weight=2.,
-                obs_loss_weight=1.
+                value_loss_weight=1.,  # 0.25 - UniZero
+                obs_loss_weight=10.  # 10. - UniZero
             ),
         ),
         learn=dict(
@@ -144,4 +146,6 @@ if __name__ == "__main__":
         # Update exp_name to include the current seed
         main_config.exp_name = f'data_unizero/{env_id[:-14]}_stack1_unizero_upc{update_per_collect}-rr{replay_ratio}_H{num_unroll_steps}_bs{batch_size}_seed{seed}'
         from lzero.entry import train_unizero
-        train_unizero([main_config, create_config], seed=seed, model_path=main_config.policy.model_path, max_env_step=max_env_step)
+
+        train_unizero([main_config, create_config], seed=seed, model_path=main_config.policy.model_path,
+                      max_env_step=max_env_step)

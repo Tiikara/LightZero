@@ -142,7 +142,7 @@ class LossWithIntermediateLosses:
     Returns:
         - None
     """
-    def __init__(self, latent_recon_loss_weight=0, perceptual_loss_weight=0, **kwargs):
+    def __init__(self, latent_recon_loss_weight=0, perceptual_loss_weight=0, value_loss_weight=0.25, obs_loss_weight=10., **kwargs):
         # Ensure that kwargs is not empty
         if not kwargs:
             raise ValueError("At least one loss must be provided")
@@ -151,9 +151,7 @@ class LossWithIntermediateLosses:
         device = next(iter(kwargs.values())).device
 
         # Define the weights for each loss type
-        self.obs_loss_weight = 10
         self.reward_loss_weight = 1.
-        self.value_loss_weight = 0.25
         self.policy_loss_weight = 1.
         self.ends_loss_weight = 0.
 

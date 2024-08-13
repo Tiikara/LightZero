@@ -101,6 +101,7 @@ class WorldModel(nn.Module):
         self.num_capsules = self.config.num_capsules
         self.caps_direction_loss_weight = self.config.caps_direction_loss_weight
         self.obs_loss_weight = self.config.obs_loss_weight
+        self.value_loss_weight = self.config.value_loss_weight
         self.obs_type = self.config.obs_type
         self.embed_dim = self.config.embed_dim
         self.num_heads = self.config.num_heads
@@ -1046,7 +1047,6 @@ class WorldModel(nn.Module):
             alpha = self.caps_direction_loss_weight / (self.caps_direction_loss_weight + 1.)
 
             loss_obs = dir_loss * alpha + length_loss * (1. - alpha)
-            loss_obs *= self.obs_loss_weight
 
 
         # Apply mask to loss_obs
@@ -1119,6 +1119,8 @@ class WorldModel(nn.Module):
         return LossWithIntermediateLosses(
             latent_recon_loss_weight=self.latent_recon_loss_weight,
             perceptual_loss_weight=self.perceptual_loss_weight,
+            value_loss_weight=self.value_loss_weight,
+            obs_loss_weight=self.obs_loss_weight,
             loss_obs=discounted_loss_obs,
             loss_rewards=discounted_loss_rewards,
             loss_value=discounted_loss_value,
