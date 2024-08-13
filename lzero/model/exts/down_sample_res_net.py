@@ -56,12 +56,14 @@ class DownSampleResNet(nn.Module):
         current_channels = start_channels
         current_size = observation_shape[1] // 2
 
+        in_channels = observation_shape[0] + 2 if use_coords else observation_shape[0]
+
         downsamples = [
             AddCoords(
                 rank=2
             ) if use_coords else nn.Identity(),
             ResDownSampleBlock(
-                in_channels=observation_shape[0] + 2,
+                in_channels=in_channels,
                 out_channels=current_channels,
                 activation=activation,
                 norm_type=norm_type
