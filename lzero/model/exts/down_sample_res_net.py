@@ -24,7 +24,7 @@ from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule
 from .torch_encodings import PositionalEncodingPermute2D, Summer
 from .coordconv import AddCoords
-from .res_down_sample_block import ResDownSampleBlock
+from .res_down_sample_layer import ResDownSampleLayer
 
 import torch
 from torch import nn
@@ -39,7 +39,9 @@ class DownSampleResNet(nn.Module):
                  start_channels: int,
                  activation: nn.Module = nn.ReLU(inplace=True),
                  norm_type: Optional[str] = 'BN',
-                 use_coords: bool = False
+                 use_coords: bool = False,
+                 channels_scale: float = 2.,
+                 num_blocks: int = 1
                  ) -> None:
         """
         Overview:
@@ -62,24 +64,26 @@ class DownSampleResNet(nn.Module):
             AddCoords(
                 rank=2
             ) if use_coords else nn.Identity(),
-            ResDownSampleBlock(
+            ResDownSampleLayer(
                 in_channels=in_channels,
                 out_channels=current_channels,
                 activation=activation,
-                norm_type=norm_type
+                norm_type=norm_type,
+                num_blocks=num_blocks
             )
         ]
 
         while current_size > 5:
-            new_channels = current_channels * 2
+            new_channels = int(current_channels * channels_scale)
             current_size = current_size // 2
 
             downsamples.append(
-                ResDownSampleBlock(
+                ResDownSampleLayer(
                     in_channels=current_channels,
                     out_channels=new_channels,
                     activation=activation,
-                    norm_type=norm_type
+                    norm_type=norm_type,
+                    num_blocks=num_blocks
                 )
             )
 

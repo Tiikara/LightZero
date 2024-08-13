@@ -42,7 +42,9 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
             downsample: bool = True,
             start_channels: int = 64,
             use_coords: bool = False,
-            num_capsules: int = 32
+            channels_scale: float = 2.,
+            num_capsules: int = 32,
+            num_blocks: int = 1
     ) -> None:
         """
         Overview:
@@ -75,7 +77,9 @@ class RepresentationNetworkUniZeroCapsnetResDownsample(nn.Module):
             start_channels=start_channels,
             activation=activation,
             norm_type=norm_type,
-            use_coords=use_coords
+            use_coords=use_coords,
+            channels_scale=channels_scale,
+            num_blocks=num_blocks
         )
 
         self.activation = activation

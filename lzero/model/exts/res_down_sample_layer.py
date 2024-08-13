@@ -5,11 +5,11 @@ from ding.torch_utils import ResBlock
 from torch import nn
 
 
-class ResDownSampleBlock(nn.Module):
+class ResDownSampleLayer(nn.Module):
     def __init__(self,
                  in_channels: int,
                  out_channels: int,
-                 blocks: int = 1,
+                 num_blocks: int = 1,
                  activation: nn.Module = nn.ReLU(inplace=True),
                  norm_type: Optional[str] = 'BN',
                  ) -> None:
@@ -25,7 +25,7 @@ class ResDownSampleBlock(nn.Module):
                     norm_type=norm_type,
                     res_type='basic',
                     bias=False
-                ) for _ in range(blocks)
+                ) for _ in range(num_blocks)
             ]
         )
 

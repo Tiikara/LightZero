@@ -96,7 +96,9 @@ def build_representation_network_unizero(
             group_size=group_size,
             num_capsules=model_config.num_capsules,
             use_coords=model_config.use_coords,
-            start_channels=model_config.start_channels
+            start_channels=model_config.start_channels,
+            channels_scale=model_config.channels_scale,
+            num_blocks=model_config.num_blocks
         )
     else:
         raise 'Not supported'

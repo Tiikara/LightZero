@@ -71,7 +71,9 @@ atari_unizero_config = dict(
                 type='capsnet_res_downsample',
                 num_capsules=16,
                 use_coords=False,
-                start_channels=8
+                start_channels=8,
+                channels_scale=2.,
+                num_blocks=1
             ),
             use_latent_decoder_espcn=True,  # More accurate model
             world_model_cfg=dict(
