@@ -33,6 +33,7 @@ import torch
 from torch import nn
 import timm
 from .caps_sem import CapSEM
+from .torch_encodings import Summer, PositionalEncodingPermute2D
 
 
 class RepresentationNetworkUniZeroDownsample(nn.Module):
@@ -230,9 +231,34 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             self.out_create_layers = [
                 lambda: GumbelSimNorm(simnorm_dim=group_size)
             ]
+        elif head_type == 'simnorm':
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size, self.embedding_dim, bias=False),
+                SimNorm(simnorm_dim=group_size)
+            )
+
+            self.out_create_layers = [
+                lambda: SimNorm(simnorm_dim=group_size)
+            ]
+        elif head_type == 'simnorm_positional':
+            self.head = nn.Sequential(
+                Summer(PositionalEncodingPermute2D(self.downsample_net.out_features)),
+                nn.MaxPool2d(kernel_size=self.downsample_net.out_size),
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features
+                ),
+                nn.Linear(self.downsample_net.out_features, self.embedding_dim, bias=False),
+                SimNorm(simnorm_dim=group_size)
+            )
+
+            self.out_create_layers = [
+                lambda: SimNorm(simnorm_dim=group_size)
+            ]
         else:
             raise 'Not Supported ' + head_type
-
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """

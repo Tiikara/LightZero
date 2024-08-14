@@ -112,6 +112,9 @@ class PositionalEncoding2D(nn.Module):
         self.cached_penc = emb[None, :, :, :orig_ch].repeat(tensor.shape[0], 1, 1, 1)
         return self.cached_penc
 
+    def __repr__(self) -> str:
+        return f"PositionalEncoding2D(channels={self.channels})"
+
 
 class PositionalEncodingPermute2D(nn.Module):
     def __init__(self, channels):

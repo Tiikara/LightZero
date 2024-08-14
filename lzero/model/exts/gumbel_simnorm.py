@@ -35,3 +35,6 @@ class GumbelSimNorm(nn.Module):
             return x.view(*shp)
         else:
             return x
+
+    def __repr__(self) -> str:
+        return f"GumbelSimNorm(dim={self.dim})"
