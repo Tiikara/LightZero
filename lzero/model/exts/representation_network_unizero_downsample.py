@@ -254,7 +254,7 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             elif simnorm_positional_config.pool_type == 'avg':
                 pool = nn.AdaptiveAvgPool2d(1)
                 pool_features = self.downsample_net.out_features
-            elif simnorm_positional_config.pool_type == 'adaptive':
+            elif simnorm_positional_config.pool_type == 'mixed_max_avg':
                 pool = CatLayersModule(
                     layers=[
                         nn.AdaptiveMaxPool2d(1),
