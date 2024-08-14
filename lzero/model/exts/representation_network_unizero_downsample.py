@@ -275,9 +275,9 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 Summer(PositionalEncodingPermute2D(self.embedding_dim)),
                 pool,
                 ReshapeLastDim1D(
-                    out_features=pool_features
+                    out_features=self.embedding_dim
                 ),
-                nn.Linear(pool_features, self.embedding_dim, bias=False),
+                nn.Linear(self.embedding_dim, self.embedding_dim, bias=False),
                 SimNorm(simnorm_dim=group_size)
             )
 
