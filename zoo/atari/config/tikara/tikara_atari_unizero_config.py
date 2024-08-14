@@ -84,7 +84,6 @@ atari_unizero_config = dict(
                 double_linear_input_for_caps=False,
                 use_routing=False,
                 use_squash_in_transformer=True,
-                downsample_network_type='base',
                 head_type='gumbel_simnorm'
             ),
             use_latent_decoder_espcn=True,  # More accurate model
