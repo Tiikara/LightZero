@@ -5,8 +5,8 @@ from .representation_network_unizero_capsem_only import RepresentationNetworkUni
 from .representation_network_unizero_capsnet_pos import RepresentationNetworkUniZeroCapsnetPositional
 from .representation_network_unizero_pos import RepresentationNetworkUniZeroPositional
 from .representation_network_unizero_capsnet_squashless import RepresentationNetworkUniZeroCapsnetSquashless
-from .representation_network_unizero_capsnet_downsample import \
-    RepresentationNetworkUniZeroCapsnetDownsample
+from .representation_network_unizero_downsample import \
+    RepresentationNetworkUniZeroDownsample
 from .representation_network_unizero_res_downsample import RepresentationNetworkUniZeroResDownsample
 
 def build_representation_network_unizero(
@@ -88,7 +88,7 @@ def build_representation_network_unizero(
             num_capsules=model_config.num_capsules
         )
     elif model_config.type == 'downsample':
-        return RepresentationNetworkUniZeroCapsnetDownsample(
+        return RepresentationNetworkUniZeroDownsample(
             observation_shape=observation_shape,
             activation=activation,
             norm_type=norm_type,
@@ -99,7 +99,8 @@ def build_representation_network_unizero(
             double_linear_input_for_caps=model_config.double_linear_input_for_caps,
             use_routing=model_config.use_routing,
             use_squash_in_transformer=model_config.use_squash_in_transformer,
-            downsample_network_config=model_config.downsample_network
+            downsample_network_config=model_config.downsample_network,
+            head_type=model_config.head_type
         )
     elif model_config.type == 'base_res_downsample':
         return RepresentationNetworkUniZeroResDownsample(
