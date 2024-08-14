@@ -84,10 +84,10 @@ atari_unizero_config = dict(
                 double_linear_input_for_caps=False,
                 use_routing=False,
                 use_squash_in_transformer=True,
-                head_type='simnorm_positional',
+                head_type='simnorm_positional_object_aware',
                 head=dict(
                     simnorm_positional=dict(
-                        pool_type='mixed_max_avg'
+                        pool_type='adapt_object_aware_pooling'
                     )
                 )
             ),
