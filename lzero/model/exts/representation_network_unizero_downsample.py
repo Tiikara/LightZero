@@ -250,16 +250,19 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
             if simnorm_positional_config.pool_type == 'max':
                 pool = nn.AdaptiveMaxPool2d(1)
+                pool_features = self.downsample_net.out_features
             elif simnorm_positional_config.pool_type == 'avg':
                 pool = nn.AdaptiveAvgPool2d(1)
+                pool_features = self.downsample_net.out_features
             elif simnorm_positional_config.pool_type == 'adaptive':
                 pool = CatLayersModule(
                     layers=[
                         nn.AdaptiveMaxPool2d(1),
-                        nn.AdaptiveMaxPool2d(1)
+                        nn.AdaptiveAvgPool2d(1)
                     ],
                     dim=1
                 )
+                pool_features = self.downsample_net.out_features * 2
             else:
                 raise 'Not supported ' + simnorm_positional_config.pool_type
 
@@ -267,9 +270,9 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 Summer(PositionalEncodingPermute2D(self.downsample_net.out_features)),
                 pool,
                 ReshapeLastDim1D(
-                    out_features=self.downsample_net.out_features
+                    out_features=pool_features
                 ),
-                nn.Linear(self.downsample_net.out_features, self.embedding_dim, bias=False),
+                nn.Linear(pool_features, self.embedding_dim, bias=False),
                 SimNorm(simnorm_dim=group_size)
             )
 
