@@ -287,14 +287,11 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             ]
         elif head_type == 'simnorm_coord_max_pool':
             self.head = nn.Sequential(
-                nn.Conv2d(self.downsample_net.out_features, self.embedding_dim, kernel_size=1),
-                nn.BatchNorm2d(self.embedding_dim),
-                activation,
                 CoordMaxPool2d(kernel_size=self.downsample_net.out_size, with_r=True),
                 ReshapeLastDim1D(
-                    out_features=self.embedding_dim * 4
+                    out_features=self.downsample_net.out_features * 4
                 ),
-                nn.Linear(self.embedding_dim * 4, self.embedding_dim, bias=False),
+                nn.Linear(self.downsample_net.out_features * 4, self.embedding_dim, bias=False),
                 SimNorm(simnorm_dim=group_size)
             )
 
