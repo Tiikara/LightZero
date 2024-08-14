@@ -269,7 +269,10 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 raise 'Not supported ' + simnorm_positional_config.pool_type
 
             self.head = nn.Sequential(
-                Summer(PositionalEncodingPermute2D(self.downsample_net.out_features)),
+                nn.Conv2d(self.downsample_net.out_features, self.embedding_dim, kernel_size=1),
+                nn.BatchNorm2d(self.embedding_dim),
+                activation,
+                Summer(PositionalEncodingPermute2D(self.embedding_dim)),
                 pool,
                 ReshapeLastDim1D(
                     out_features=pool_features
