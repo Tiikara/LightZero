@@ -9,7 +9,7 @@ class CatLayersModule(nn.Module):
             dim
     ) -> None:
         super().__init__()
-        self.layers = nn.ModuleList(*self.layers)
+        self.layers = nn.ModuleList(layers)
         self.dim = dim
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

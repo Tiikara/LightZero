@@ -87,7 +87,7 @@ atari_unizero_config = dict(
                 head_type='simnorm_positional',
                 head=dict(
                     simnorm_positional=dict(
-                        pool_type='max'
+                        pool_type='mixed_max_avg'
                     )
                 )
             ),
