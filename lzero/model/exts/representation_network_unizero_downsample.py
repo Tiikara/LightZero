@@ -30,6 +30,7 @@ from .base_down_sample import BaseDownSample
 from .gumbel_simnorm import GumbelSimNorm
 from .cat_layers_module import CatLayersModule
 from .adaptive_object_aware_pooling import AdaptiveObjectAwarePooling
+from .coordconv import AddCoords
 
 import torch
 from torch import nn
@@ -295,6 +296,26 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                     out_features=self.embedding_dim
                 ),
                 nn.Linear(self.embedding_dim, self.embedding_dim, bias=False),
+                SimNorm(simnorm_dim=group_size)
+            )
+
+            self.out_create_layers = [
+                lambda: SimNorm(simnorm_dim=group_size)
+            ]
+        elif head_type == 'simnorm_coords_object_aware':
+            self.head = nn.Sequential(
+                nn.Conv2d(self.downsample_net.out_features, self.embedding_dim, kernel_size=1),
+                nn.BatchNorm2d(self.embedding_dim),
+                activation,
+                AdaptiveObjectAwarePooling(
+                    in_channels=self.embedding_dim,
+                    attention_channels=self.embedding_dim + 2,
+                    pre_layer_features=AddCoords(rank=2)
+                ),
+                ReshapeLastDim1D(
+                    out_features=self.embedding_dim + 2
+                ),
+                nn.Linear(self.embedding_dim + 2, self.embedding_dim, bias=False),
                 SimNorm(simnorm_dim=group_size)
             )
 

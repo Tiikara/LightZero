@@ -34,14 +34,14 @@ from .caps_sem import CapSEM
 
 
 class AdaptiveObjectAwarePooling(nn.Module):
-    def __init__(self, in_channels, pre_layer_features, epsilon=1e-6):
+    def __init__(self, in_channels, pre_layer_features, attention_channels=1, epsilon=1e-6):
         super().__init__()
 
         self.pre_layer_features = pre_layer_features
 
         self.attention = nn.Sequential(
-            nn.Conv2d(in_channels, 1, kernel_size=1),
-            nn.BatchNorm2d(1),
+            nn.Conv2d(in_channels, attention_channels, kernel_size=1),
+            nn.BatchNorm2d(attention_channels),
             nn.Sigmoid()
         )
 
