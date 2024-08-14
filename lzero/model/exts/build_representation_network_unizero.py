@@ -100,7 +100,8 @@ def build_representation_network_unizero(
             use_routing=model_config.use_routing,
             use_squash_in_transformer=model_config.use_squash_in_transformer,
             downsample_network_config=model_config.downsample_network,
-            head_type=model_config.head_type
+            head_type=model_config.head_type,
+            head_config=model_config.head
         )
     elif model_config.type == 'base_res_downsample':
         return RepresentationNetworkUniZeroResDownsample(

@@ -84,7 +84,12 @@ atari_unizero_config = dict(
                 double_linear_input_for_caps=False,
                 use_routing=False,
                 use_squash_in_transformer=True,
-                head_type='simnorm_positional'
+                head_type='simnorm_positional',
+                head=dict(
+                    simnorm_positional=dict(
+                        pool_type='max'
+                    )
+                )
             ),
             use_latent_decoder_espcn=True,  # More accurate model
             world_model_cfg=dict(

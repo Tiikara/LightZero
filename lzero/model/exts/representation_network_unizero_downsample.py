@@ -28,6 +28,7 @@ from .return_shape_module import ReturnShapeModule
 from .reshape_last_dim import ReshapeLastDim
 from .base_down_sample import BaseDownSample
 from .gumbel_simnorm import GumbelSimNorm
+from .cat_layers_module import CatLayersModule
 
 import torch
 from torch import nn
@@ -52,7 +53,8 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             use_routing: bool = True,
             use_squash_in_transformer: bool = False,
             downsample_network_config=None,
-            head_type: str = None
+            head_type: str = None,
+            head_config=None
     ) -> None:
         """
         Overview:
@@ -244,9 +246,26 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 lambda: SimNorm(simnorm_dim=group_size)
             ]
         elif head_type == 'simnorm_positional':
+            simnorm_positional_config = head_config.simnorm_positional
+
+            if simnorm_positional_config.pool_type == 'max':
+                pool = nn.AdaptiveMaxPool2d(1)
+            elif simnorm_positional_config.pool_type == 'avg':
+                pool = nn.AdaptiveAvgPool2d(1)
+            elif simnorm_positional_config.pool_type == 'adaptive':
+                pool = CatLayersModule(
+                    layers=[
+                        nn.AdaptiveMaxPool2d(1),
+                        nn.AdaptiveMaxPool2d(1)
+                    ],
+                    dim=1
+                )
+            else:
+                raise 'Not supported ' + simnorm_positional_config.pool_type
+
             self.head = nn.Sequential(
                 Summer(PositionalEncodingPermute2D(self.downsample_net.out_features)),
-                nn.MaxPool2d(kernel_size=self.downsample_net.out_size),
+                pool,
                 ReshapeLastDim1D(
                     out_features=self.downsample_net.out_features
                 ),
