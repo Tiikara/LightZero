@@ -31,7 +31,7 @@ from .gumbel_simnorm import GumbelSimNorm
 from .cat_layers_module import CatLayersModule
 from .adaptive_object_aware_pooling import AdaptiveObjectAwarePooling
 from .coordconv import AddCoords
-from .coord_max_pool_2d import CoordMaxPool2d
+from .coord_max_pool_2d import CoordMaxPool2d, CoordMaxPool2dPerChannel
 
 import torch
 from torch import nn
@@ -224,6 +224,43 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                         )
                     )
                 ]
+        elif head_type == 'caps_max_coords':
+            assert self.embedding_dim % num_capsules == 0
+
+            out_capsules_dim = self.embedding_dim // num_capsules
+
+            # num_capsules x (embedding_dim / num_capsules) = embedding_dim
+            self.out_capsules = (num_capsules, out_capsules_dim)
+
+            self.head = nn.Sequential(
+                CoordMaxPool2dPerChannel(kernel_size=self.downsample_net.out_size, with_r=True),
+                PrimaryCapsForward1D(
+                    capsule_size=(self.downsample_net.out_features, 4)
+                ),
+                RoutingCaps(
+                    in_capsules=(self.downsample_net.out_features, 4),
+                    out_capsules=self.out_capsules,
+                    bias=False
+                ),
+                CapSEM(
+                    num_capsules=self.out_capsules[0],
+                    capsule_dim=self.out_capsules[1],
+                    group_size=group_size
+                ),
+                ReshapeLastDim1D(
+                    out_features=self.out_capsules[0] * self.out_capsules[1]
+                ),
+            )
+
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    CapSEM(
+                        num_capsules=self.out_capsules[0],
+                        capsule_dim=self.out_capsules[1],
+                        group_size=group_size
+                    )
+                )
+            ]
         elif head_type == 'gumbel_simnorm':
             self.head = nn.Sequential(
                     ReshapeLastDim1D(
