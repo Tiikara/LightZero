@@ -32,6 +32,7 @@ from .cat_layers_module import CatLayersModule
 from .adaptive_object_aware_pooling import AdaptiveObjectAwarePooling
 from .coordconv import AddCoords
 from .coord_max_pool_2d import CoordMaxPool2d, CoordMaxPool2dPerChannel
+from .channel_wise_max_pool_2d_with_crossinfo import ChannelWiseMaxPoolWithCrossInfo
 
 import torch
 from torch import nn
@@ -254,10 +255,64 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
             self.out_create_layers = [
                 lambda: SecondDimCheck(
-                    CapSEM(
-                        num_capsules=self.out_capsules[0],
-                        capsule_dim=self.out_capsules[1],
-                        group_size=group_size
+                    ReturnShapeModule(
+                        nn.Sequential(
+                            ReshapeLastDim(
+                                out_shape=self.out_capsules
+                            ),
+                            Squash(),
+                            CapSEM(
+                                num_capsules=self.out_capsules[0],
+                                capsule_dim=self.out_capsules[1],
+                                group_size=group_size
+                            )
+                        )
+                    )
+                )
+            ]
+        elif head_type == 'caps_max_positional':
+            assert self.embedding_dim % num_capsules == 0
+
+            out_capsules_dim = self.embedding_dim // num_capsules
+
+            # num_capsules x (embedding_dim / num_capsules) = embedding_dim
+            self.out_capsules = (num_capsules, out_capsules_dim)
+
+            self.head = nn.Sequential(
+                Summer(PositionalEncodingPermute2D(self.downsample_net.out_features)),
+                ChannelWiseMaxPoolWithCrossInfo(kernel_size=self.downsample_net.out_size),
+                PrimaryCapsForward1D(
+                    capsule_size=(self.downsample_net.out_features, self.downsample_net.out_features)
+                ),
+                RoutingCaps(
+                    in_capsules=(self.downsample_net.out_features, self.downsample_net.out_features),
+                    out_capsules=self.out_capsules,
+                    bias=False
+                ),
+                CapSEM(
+                    num_capsules=self.out_capsules[0],
+                    capsule_dim=self.out_capsules[1],
+                    group_size=group_size
+                ),
+                ReshapeLastDim1D(
+                    out_features=self.out_capsules[0] * self.out_capsules[1]
+                ),
+            )
+
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    ReturnShapeModule(
+                        nn.Sequential(
+                            ReshapeLastDim(
+                                out_shape=self.out_capsules
+                            ),
+                            Squash(),
+                            CapSEM(
+                                num_capsules=self.out_capsules[0],
+                                capsule_dim=self.out_capsules[1],
+                                group_size=group_size
+                            )
+                        )
                     )
                 )
             ]
