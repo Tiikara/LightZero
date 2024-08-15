@@ -119,7 +119,7 @@ class UniZeroModel(nn.Module):
                     self.decoder_network = LatentDecoderESPCN(
                         embedding_dim=world_model_cfg.embed_dim,
                         output_shape=(3, 64, 64),
-                        num_channels=self.representation_network.downsample_net.final_stage_channels
+                        num_channels=64
                     )
                 else:
                     self.decoder_network = LatentDecoder(embedding_dim=world_model_cfg.embed_dim, output_shape=(3, 64, 64))
