@@ -33,6 +33,7 @@ from .adaptive_object_aware_pooling import AdaptiveObjectAwarePooling
 from .coordconv import AddCoords
 from .coord_max_pool_2d import CoordMaxPool2d, CoordMaxPool2dPerChannel
 from .channel_wise_max_pool_2d_with_crossinfo import ChannelWiseMaxPoolWithCrossInfo
+from .down_sample_flat import DownSampleFlat
 
 import torch
 from torch import nn
@@ -103,6 +104,17 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 use_coords=res_net_config.use_coords,
                 channels_scale=res_net_config.channels_scale,
                 num_blocks=res_net_config.num_blocks
+            )
+        elif downsample_network_config.type == 'flat':
+            flat_config = downsample_network_config.flat
+
+            self.downsample_net = DownSampleFlat(
+                observation_shape,
+                start_channels=flat_config.start_channels,
+                activation=activation,
+                norm_type=norm_type,
+                channels_scale=flat_config.channels_scale,
+                num_blocks=flat_config.num_blocks
             )
         else:
             raise "Not supported " + downsample_network_config.type

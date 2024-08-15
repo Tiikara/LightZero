@@ -71,20 +71,25 @@ atari_unizero_config = dict(
             representaion_model=dict(
                 type='downsample',
                 downsample_network=dict(
-                    type='base',
+                    type='flat',
                     res_net=dict(
                         use_coords=False,
                         start_channels=32,
                         channels_scale=1.2,
                         num_blocks=1,
-                    )
+                    ),
+                    flat=dict(
+                        start_channels=32,
+                        channels_scale=1.,
+                        num_blocks=3,
+                    ),
                 ),
                 num_capsules=128,
                 use_linear_input_for_caps=True,
                 double_linear_input_for_caps=False,
                 use_routing=False,
                 use_squash_in_transformer=True,
-                head_type='caps_max_positional',
+                head_type='simnorm_positional',
                 head=dict(
                     simnorm_positional=dict(
                         pool_type='max'
@@ -107,7 +112,7 @@ atari_unizero_config = dict(
                 # latent_recon_loss_weight=0.01,
                 # perceptual_loss_weight=10.,
                 # predict_latent_loss_type='mse'
-                predict_latent_loss_type='caps',
+                # predict_latent_loss_type='caps',
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
                 obs_loss_weight=10.  # 10. - UniZero
