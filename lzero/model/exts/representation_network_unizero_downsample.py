@@ -280,12 +280,12 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
             self.head = nn.Sequential(
                 Summer(PositionalEncodingPermute2D(self.downsample_net.out_features)),
-                ChannelWiseMaxPoolWithCrossInfo(kernel_size=self.downsample_net.out_size),
+                nn.AdaptiveMaxPool2d(1),
                 PrimaryCapsForward1D(
-                    capsule_size=(self.downsample_net.out_features, self.downsample_net.out_features)
+                    capsule_size=(self.downsample_net.out_features, 1)
                 ),
                 RoutingCaps(
-                    in_capsules=(self.downsample_net.out_features, self.downsample_net.out_features),
+                    in_capsules=(self.downsample_net.out_features, 1),
                     out_capsules=self.out_capsules,
                     bias=False
                 ),
@@ -307,6 +307,50 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                                 out_shape=self.out_capsules
                             ),
                             Squash(),
+                            CapSEM(
+                                num_capsules=self.out_capsules[0],
+                                capsule_dim=self.out_capsules[1],
+                                group_size=group_size
+                            )
+                        )
+                    )
+                )
+            ]
+        elif head_type == 'cap_sem_max_positional':
+            assert self.embedding_dim % num_capsules == 0
+
+            out_capsules_dim = self.embedding_dim // num_capsules
+
+            # num_capsules x (embedding_dim / num_capsules) = embedding_dim
+            self.out_capsules = (num_capsules, out_capsules_dim)
+
+            self.head = nn.Sequential(
+                Summer(PositionalEncodingPermute2D(self.downsample_net.out_features)),
+                nn.AdaptiveMaxPool2d(1),
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features
+                ),
+                nn.Linear(self.downsample_net.out_features, self.embedding_dim, bias=False),
+                ReshapeLastDim(
+                    out_shape=self.out_capsules
+                ),
+                CapSEM(
+                    num_capsules=self.out_capsules[0],
+                    capsule_dim=self.out_capsules[1],
+                    group_size=group_size
+                ),
+                ReshapeLastDim1D(
+                    out_features=self.out_capsules[0] * self.out_capsules[1]
+                ),
+            )
+
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    ReturnShapeModule(
+                        nn.Sequential(
+                            ReshapeLastDim(
+                                out_shape=self.out_capsules
+                            ),
                             CapSEM(
                                 num_capsules=self.out_capsules[0],
                                 capsule_dim=self.out_capsules[1],
@@ -362,15 +406,12 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 raise 'Not supported ' + simnorm_positional_config.pool_type
 
             self.head = nn.Sequential(
-                nn.Conv2d(self.downsample_net.out_features, self.embedding_dim, kernel_size=1),
-                nn.BatchNorm2d(self.embedding_dim),
-                activation,
-                Summer(PositionalEncodingPermute2D(self.embedding_dim)),
+                Summer(PositionalEncodingPermute2D(self.downsample_net.out_features)),
                 pool,
                 ReshapeLastDim1D(
-                    out_features=self.embedding_dim
+                    out_features=pool_features
                 ),
-                nn.Linear(self.embedding_dim, self.embedding_dim, bias=False),
+                nn.Linear(pool_features, self.embedding_dim, bias=False),
                 SimNorm(simnorm_dim=group_size)
             )
 

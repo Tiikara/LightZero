@@ -72,3 +72,33 @@ class ChannelWiseMaxPoolWithCrossInfo(torch.nn.Module):
         result = result.view(batch_size, channels, channels, pooled_size)
 
         return result  # (B, C, C, H*W)
+
+
+if __name__ == "__main__":
+    # Example usage and timing
+    import time
+
+    # Create a sample input tensor
+    input_tensor = torch.randn(2, 3, 8, 8, requires_grad=True)  # (batch_size, channels, height, width)
+    pool = ChannelWiseMaxPoolWithCrossInfo(kernel_size=2, stride=2)
+
+    # Warm-up run
+    _ = pool(input_tensor)
+
+    # Timed run
+    start_time = time.time()
+    output = pool(input_tensor)
+    end_time = time.time()
+
+    print(f"Input shape: {input_tensor.shape}")
+    print(f"Output shape: {output.shape}")
+    print(f"Forward pass time: {end_time - start_time:.4f} seconds")
+
+    # Test backward pass
+    start_time = time.time()
+    loss = output.sum()
+    loss.backward()
+    end_time = time.time()
+    print(f"Backward pass time: {end_time - start_time:.4f} seconds")
+
+    print("Gradient check:", input_tensor.grad is not None)
