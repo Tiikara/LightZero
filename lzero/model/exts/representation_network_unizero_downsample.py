@@ -53,10 +53,6 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             group_size: int = 8,
             downsample: bool = True,
             num_capsules: int = 32,
-            use_linear_input_for_caps: bool = False,
-            double_linear_input_for_caps: bool = False,
-            use_routing: bool = True,
-            use_squash_in_transformer: bool = False,
             downsample_network_config=None,
             head_type: str = None,
             head_config=None
@@ -123,6 +119,8 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
         self.embedding_dim = embedding_dim
 
         if head_type == 'caps':
+            caps_config = head_config.caps
+
             assert self.embedding_dim % num_capsules == 0
 
             out_capsules_dim = self.embedding_dim // num_capsules
@@ -130,14 +128,14 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             # num_capsules x (embedding_dim / num_capsules) = embedding_dim
             self.out_capsules = (num_capsules, out_capsules_dim)
 
-            if use_linear_input_for_caps:
+            if caps_config.use_linear_input_for_caps:
                 caps = [
                     ReshapeLastDim1D(
                         out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
                     )
                 ]
 
-                if double_linear_input_for_caps:
+                if caps_config.double_linear_input_for_caps:
                     caps += [
                         nn.Linear(
                             self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
@@ -166,7 +164,7 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                     )
                 ]
 
-                if use_routing:
+                if caps_config.use_routing:
                     caps += [
                         RoutingCaps(
                             in_capsules=self.out_capsules,
@@ -188,7 +186,7 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
                 self.head = nn.Sequential(*caps)
             else:
-                assert use_routing is True
+                assert caps_config.use_routing is True
 
                 self.head = nn.Sequential(
                     CapsInitialModule(
@@ -209,7 +207,7 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                     ),
                 )
 
-            if use_squash_in_transformer:
+            if caps_config.use_squash_in_transformer:
                 self.out_create_layers = [
                     lambda: SecondDimCheck(
                         ReturnShapeModule(

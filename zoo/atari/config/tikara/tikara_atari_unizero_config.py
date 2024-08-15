@@ -85,18 +85,20 @@ atari_unizero_config = dict(
                     ),
                 ),
                 num_capsules=128,
-                use_linear_input_for_caps=False,
-                double_linear_input_for_caps=False,
-                use_routing=True,
-                use_squash_in_transformer=True,
                 head_type='caps',
                 head=dict(
+                    caps=dict(
+                        use_linear_input_for_caps=False,
+                        double_linear_input_for_caps=False,
+                        use_routing=True,
+                        use_squash_in_transformer=True,
+                    ),
                     simnorm_positional=dict(
                         pool_type='max'
                     )
                 )
             ),
-            use_latent_decoder_espcn=True,  # More accurate model
+            use_latent_decoder_espcn=False,  # espcn model
             world_model_cfg=dict(
                 max_blocks=num_unroll_steps,
                 max_tokens=2 * num_unroll_steps,  # NOTE: each timestep has 2 tokens: obs and action
@@ -109,7 +111,7 @@ atari_unizero_config = dict(
                 embed_dim=768,
                 obs_type='image',
                 env_num=max(collector_env_num, evaluator_env_num),
-                # latent_recon_loss_weight=0.01,
+                latent_recon_loss_weight=0.1,
                 perceptual_loss_weight=0.1,
                 # predict_latent_loss_type='mse'
                 predict_latent_loss_type='caps',

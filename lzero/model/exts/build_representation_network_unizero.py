@@ -95,10 +95,6 @@ def build_representation_network_unizero(
             embedding_dim=embedding_dim,
             group_size=group_size,
             num_capsules=model_config.num_capsules,
-            use_linear_input_for_caps=model_config.use_linear_input_for_caps,
-            double_linear_input_for_caps=model_config.double_linear_input_for_caps,
-            use_routing=model_config.use_routing,
-            use_squash_in_transformer=model_config.use_squash_in_transformer,
             downsample_network_config=model_config.downsample_network,
             head_type=model_config.head_type,
             head_config=model_config.head
