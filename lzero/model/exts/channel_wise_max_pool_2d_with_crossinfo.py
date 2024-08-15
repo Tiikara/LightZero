@@ -54,19 +54,21 @@ class ChannelWiseMaxPoolWithCrossInfo(torch.nn.Module):
         )
 
         _, _, pooled_height, pooled_width = pooled.shape
+        pooled_size = pooled_height * pooled_width
 
-        result = torch.zeros(batch_size, channels, channels, pooled_height * pooled_width, device=x.device)
+        # Reshape indices for advanced indexing
+        indices = indices.view(batch_size, channels, -1)
 
-        # Flatten the input tensor for easier indexing
+        # Create batch indices
+        batch_indices = torch.arange(batch_size, device=x.device)[:, None, None]
+        batch_indices = batch_indices.expand(batch_size, channels, pooled_size)
+
+        # Gather values from all channels using advanced indexing
         x_flat = x.view(batch_size, channels, -1)
+        result = x_flat[batch_indices, :, indices]
 
-        for b in range(batch_size):
-            for c in range(channels):
-                # Get the flattened indices for this channel
-                channel_indices = indices[b, c].view(-1)
-
-                # For each maximum in this channel, get values from all channels
-                for i, idx in enumerate(channel_indices):
-                    result[b, c, :, i] = x_flat[b, :, idx]
+        # Reshape the result to the desired output shape
+        result = result.permute(0, 2, 1, 3).contiguous()
+        result = result.view(batch_size, channels, channels, pooled_size)
 
         return result  # (B, C, C, H*W)
