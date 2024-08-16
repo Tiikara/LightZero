@@ -85,7 +85,7 @@ atari_unizero_config = dict(
                     ),
                 ),
                 num_capsules=128,
-                head_type='caps',
+                head_type='simnorm_classification',
                 head=dict(
                     caps=dict(
                         use_linear_input_for_caps=False,
@@ -111,10 +111,10 @@ atari_unizero_config = dict(
                 embed_dim=768,
                 obs_type='image',
                 env_num=max(collector_env_num, evaluator_env_num),
-                latent_recon_loss_weight=0.1,
-                perceptual_loss_weight=0.1,
+                # latent_recon_loss_weight=0.1,
+                # perceptual_loss_weight=0.1,
                 # predict_latent_loss_type='mse'
-                predict_latent_loss_type='caps',
+                predict_latent_loss_type='classification_encoder',
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
                 obs_loss_weight=10.  # 10. - UniZero

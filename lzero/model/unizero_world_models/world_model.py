@@ -1012,6 +1012,30 @@ class WorldModel(nn.Module):
             # assert not torch.isinf(loss_obs).any(), "loss_obs contains Inf values"
             # for name, param in self.tokenizer.encoder.named_parameters():
             #     print('name, param.mean(), param.std():', name, param.mean(), param.std())
+        elif self.predict_latent_loss_type == 'classification_encoder':
+            logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
+            with torch.no_grad():
+                labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
+
+            batch_size, num_features = logits_observations_class.shape
+            epsilon = 1e-6
+            logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size) + epsilon
+            labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size) + epsilon
+
+            loss_obs_class = F.kl_div(logits_reshaped.log(), labels_reshaped, reduction='none').sum(dim=-1).mean(dim=-1)
+
+            # Entropy regularization
+            prob_latent = F.softmax(logits_observations, dim=1)
+            reg_loss_entropy = (-(prob_latent * torch.log(prob_latent + epsilon))).sum(dim=-1)
+
+            prob_latent_class = logits_reshaped
+            reg_loss_entropy_class = (-(prob_latent_class * torch.log(prob_latent_class + epsilon))).sum(dim=-1).mean(dim=-1)
+
+            # Zero barrier
+            # reg_loss_zeroless = -torch.sum(torch.log(torch.abs(logits_observations) + epsilon))
+            # reg_loss_zeroless = (1.0 / (torch.abs(logits_observations) + epsilon)).mean(dim=-1)
+
+            loss_obs = loss_obs_class + 0.1 * reg_loss_entropy + 0.1 * reg_loss_entropy_class
         elif self.predict_latent_loss_type == 'caps':
             batch_size, num_features = logits_observations.shape
 
