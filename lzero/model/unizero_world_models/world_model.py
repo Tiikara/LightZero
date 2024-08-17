@@ -997,6 +997,18 @@ class WorldModel(nn.Module):
             # MSE loss, directly compare logits and labels
             loss_obs = torch.nn.functional.mse_loss(logits_observations, labels_observations, reduction='none').mean(
                 -1)
+        elif self.predict_latent_loss_type == 'mse_entropy':
+            epsilon = 1e-6
+
+            prob_latent = F.softmax(logits_observations, dim=1)
+            reg_loss_entropy = (-(prob_latent * torch.log(prob_latent + epsilon))).sum(dim=-1)
+
+            loss_mse = torch.nn.functional.mse_loss(logits_observations, labels_observations, reduction='none').mean(
+                -1)
+
+            beta_entropy = 0.1
+
+            loss_obs = reg_loss_entropy * beta_entropy + loss_mse
         elif self.predict_latent_loss_type == 'group_kl':
             # Group KL loss, group features and calculate KL divergence within each group
             batch_size, num_features = logits_observations.shape
@@ -1027,11 +1039,13 @@ class WorldModel(nn.Module):
             #########################
             ## Entropy regularization
             #########################
-            # prob_latent = F.softmax(logits_observations, dim=1)
-            # reg_loss_entropy = (-(prob_latent * torch.log(prob_latent + epsilon))).sum(dim=-1)
+            beta_entropy = 0.1
 
-            # prob_latent_class = logits_reshaped
-            # reg_loss_entropy_class = (-(prob_latent_class * torch.log(prob_latent_class + epsilon))).sum(dim=-1).mean(dim=-1)
+            prob_latent = F.softmax(logits_observations, dim=1)
+            reg_loss_entropy = (-(prob_latent * torch.log(prob_latent + epsilon))).sum(dim=-1)
+
+            prob_latent_class = logits_reshaped
+            reg_loss_entropy_class = (-(prob_latent_class * torch.log(prob_latent_class + epsilon))).sum(dim=-1).mean(dim=-1)
 
             #########################
             ## Zero barrier
@@ -1039,7 +1053,7 @@ class WorldModel(nn.Module):
             # reg_loss_zeroless = -torch.sum(torch.log(torch.abs(logits_observations) + epsilon))
             # reg_loss_zeroless = (1.0 / (torch.abs(logits_observations) + epsilon)).mean(dim=-1)
 
-            loss_obs = loss_obs_class
+            loss_obs = loss_obs_class + reg_loss_entropy_class * beta_entropy + reg_loss_entropy * beta_entropy
         elif self.predict_latent_loss_type == 'vae':
             # VAE
             predict_z, predict_mu, predict_logvar = self.tokenizer.encoder.vae_net(logits_observations)
