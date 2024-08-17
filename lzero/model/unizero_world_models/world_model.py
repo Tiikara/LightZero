@@ -1024,14 +1024,18 @@ class WorldModel(nn.Module):
 
             loss_obs_class = F.kl_div(logits_reshaped.log(), labels_reshaped, reduction='none').sum(dim=-1).mean(dim=-1)
 
-            # Entropy regularization
+            #########################
+            ## Entropy regularization
+            #########################
             # prob_latent = F.softmax(logits_observations, dim=1)
             # reg_loss_entropy = (-(prob_latent * torch.log(prob_latent + epsilon))).sum(dim=-1)
 
             # prob_latent_class = logits_reshaped
             # reg_loss_entropy_class = (-(prob_latent_class * torch.log(prob_latent_class + epsilon))).sum(dim=-1).mean(dim=-1)
 
-            # Zero barrier
+            #########################
+            ## Zero barrier
+            #########################
             # reg_loss_zeroless = -torch.sum(torch.log(torch.abs(logits_observations) + epsilon))
             # reg_loss_zeroless = (1.0 / (torch.abs(logits_observations) + epsilon)).mean(dim=-1)
 
