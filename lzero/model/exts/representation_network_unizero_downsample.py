@@ -41,6 +41,7 @@ import timm
 from .caps_sem import CapSEM
 from .simple_classification_model import SimpleClassificationModel
 from .torch_encodings import Summer, PositionalEncodingPermute2D
+from .vae_net import VAENet
 
 
 class RepresentationNetworkUniZeroDownsample(nn.Module):
@@ -488,6 +489,27 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 lambda: SimNorm(simnorm_dim=group_size)
             ]
         elif head_type == 'simnorm_classification':
+            self.classification_model = SimpleClassificationModel(
+                channels=self.embedding_dim,
+                activation=activation,
+                group_size=group_size
+            )
+
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim,
+                    bias=False
+                ),
+            )
+
+            self.out_create_layers = []
+        elif head_type == 'vae_class':
+            self.vae_net = VAENet(self.embedding_dim)
+
             self.classification_model = SimpleClassificationModel(
                 channels=self.embedding_dim,
                 activation=activation,
