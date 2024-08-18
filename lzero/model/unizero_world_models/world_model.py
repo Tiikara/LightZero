@@ -1027,11 +1027,12 @@ class WorldModel(nn.Module):
                 target_value=0.5
             )
 
-            epsilon = 1e-6
-            logits_reshaped = F.softmax(logits_observations, dim=-1) + epsilon
-            labels_reshaped = F.softmax(labels_observations, dim=-1) + epsilon
-
-            loss_sm = F.kl_div(logits_reshaped.log(), labels_reshaped, reduction='none').mean(dim=-1)
+            loss_sm = F.kl_div(
+                F.log_softmax(logits_observations, dim=-1),
+                F.log_softmax(labels_observations, dim=-1),
+                log_target=True,
+                reduction='none'
+            ).mean(dim=-1)
 
             beta_entropy = 0.1
             loss_obs = reg_loss_entropy * beta_entropy + loss_sm
