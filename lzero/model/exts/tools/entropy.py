@@ -1,10 +1,14 @@
 import torch
 import torch.nn.functional as F
+import numpy as np
 
-from lzero.model.exts.losses import entropy_cont
+from lzero.model.exts.losses import entropy_softmax, entropy, entropy_linear
 
 logits_observations = torch.tensor([
-    [0.0,0.0,1.0],
+    [0., 0., 0.],
+    [0., 0., 0.11],
+    [1., 10., 1.],
+    [1., 10., 1.],
     [14., 16., 12.],
     [12., 12., 12.],
     [12., 13., 12.],
@@ -13,12 +17,16 @@ logits_observations = torch.tensor([
     [0.33, 0.5, 0.33],
 ])
 
-epsilon = 1e-6
+eps = 1e-6
 
+print("=== Softmax")
 print(F.softmax(logits_observations, dim=-1))
-print(entropy_cont(logits_observations))
+print("\n=== Normalize to 1 summ")
+print(logits_observations / (logits_observations.sum(dim=-1).unsqueeze(-1) + eps))
 
-logits_observations = torch.zeros([1, 768])
+print("\n=== Entropy softmax")
+print(entropy_softmax(logits_observations))
+print("\n=== Entropy Linear")
+print(entropy_linear(logits_observations))
 
-print(F.softmax(logits_observations, dim=-1))
-print(entropy_cont(logits_observations))
+print(np.log(3))

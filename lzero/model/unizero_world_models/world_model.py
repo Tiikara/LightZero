@@ -19,7 +19,7 @@ from .transformer import Transformer, TransformerConfig
 from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcache
 from .utils import WorldModelOutput, quantize_state
 from lzero.model.exts.capsnet_layers import caps_dir_loss, caps_dir_loss_se
-from ..exts.losses import entropy_cont, target_value_loss_relu, target_value_loss_quadratic
+from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -999,7 +999,11 @@ class WorldModel(nn.Module):
             loss_obs = torch.nn.functional.mse_loss(logits_observations, labels_observations, reduction='none').mean(
                 -1)
         elif self.predict_latent_loss_type == 'mse_entropy':
-            reg_loss_entropy = entropy_cont(logits_observations) / 6.6438
+            batch_size, num_features = logits_observations.shape
+
+            max_entropy = np.log(num_features)
+
+            reg_loss_entropy = entropy_softmax(logits_observations) / max_entropy
 
             reg_loss_entropy = target_value_loss_quadratic(
                 value=reg_loss_entropy,

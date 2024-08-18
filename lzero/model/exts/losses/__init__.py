@@ -2,11 +2,18 @@ import torch
 import torch.nn.functional as F
 
 
-def entropy_cont(logits):
+def entropy_softmax(logits):
     prob_latent = F.softmax(logits, dim=-1)
     log_prob_latent = F.log_softmax(logits, dim=-1)
 
     return -(prob_latent * log_prob_latent).sum(dim=-1)
+
+def entropy_linear(logits, eps=1e-6):
+    p = logits / (logits.sum(dim=-1).unsqueeze(-1) + eps)
+    return entropy(p)
+
+def entropy(logits, eps=1e-6):
+    return -(logits * torch.log(logits + eps)).sum(dim=-1)
 
 
 def target_value_loss_relu(value, target_value, value_range):

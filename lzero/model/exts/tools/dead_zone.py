@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from lzero.model.exts.losses import dead_zone_regularization, quadratic_dead_zone_regularization
 
-T1, T2 = 0.25, 0.5
+T1, T2 = 0.25, 0.75
 alpha = 1.0
 
 x = torch.linspace(-0.5, 1.5, 1000)
