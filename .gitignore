@@ -18,6 +18,7 @@ data_*
 *.png
 *.csv
 
+data_archive/
 pkg/
 src/
 

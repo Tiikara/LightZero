@@ -1015,6 +1015,26 @@ class WorldModel(nn.Module):
 
             beta_entropy = 0.1
             loss_obs = reg_loss_entropy * beta_entropy + loss_mse
+        elif self.predict_latent_loss_type == 'softmax_kl_entropy':
+            batch_size, num_features = logits_observations.shape
+
+            max_entropy = np.log(num_features)
+
+            reg_loss_entropy = entropy_softmax(logits_observations) / max_entropy
+
+            reg_loss_entropy = target_value_loss_quadratic(
+                value=reg_loss_entropy,
+                target_value=0.5
+            )
+
+            epsilon = 1e-6
+            logits_reshaped = F.softmax(logits_observations, dim=-1) + epsilon
+            labels_reshaped = F.softmax(labels_observations, dim=-1) + epsilon
+
+            loss_sm = F.kl_div(logits_reshaped.log(), labels_reshaped, reduction='none').mean(dim=-1)
+
+            beta_entropy = 0.1
+            loss_obs = reg_loss_entropy * beta_entropy + loss_sm
         elif self.predict_latent_loss_type == 'group_kl':
             # Group KL loss, group features and calculate KL divergence within each group
             batch_size, num_features = logits_observations.shape

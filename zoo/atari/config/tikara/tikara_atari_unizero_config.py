@@ -3,7 +3,7 @@ import time
 from zoo.atari.config.atari_env_action_space_map import atari_env_action_space_map
 import torch
 
-env_id = 'PongNoFrameskip-v4'  # You can specify any Atari game here
+env_id = 'DemonAttackNoFrameskip-v4'  # You can specify any Atari game here
 action_space_size = atari_env_action_space_map[env_id]
 
 # ==============================================================
@@ -63,6 +63,8 @@ atari_unizero_config = dict(
         # TODO: only for debug
         # collect_max_episode_steps=int(50),
         # eval_max_episode_steps=int(50),
+        collect_max_episode_steps=3000, # demon attack: changed
+        eval_max_episode_steps=3000, # demon attack: changed
     ),
     policy=dict(
         model=dict(
@@ -87,6 +89,9 @@ atari_unizero_config = dict(
                 num_capsules=128,
                 head_type='linear',
                 head=dict(
+                    linear=dict(
+                        use_coords=False
+                    ),
                     caps=dict(
                         use_linear_input_for_caps=False,
                         double_linear_input_for_caps=False,
@@ -114,7 +119,7 @@ atari_unizero_config = dict(
                 # latent_recon_loss_weight=0.1,
                 # perceptual_loss_weight=0.1,
                 # predict_latent_loss_type='mse'
-                predict_latent_loss_type='mse_entropy',
+                predict_latent_loss_type='softmax_kl_entropy',
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
                 obs_loss_weight=10.  # 10. - UniZero
@@ -140,7 +145,7 @@ atari_unizero_config = dict(
         n_episode=n_episode,
         replay_buffer_size=int(1e6),
         collector_env_num=collector_env_num,
-        evaluator_env_num=evaluator_env_num,
+        evaluator_env_num=evaluator_env_num
     ),
 )
 atari_unizero_config = EasyDict(atari_unizero_config)
