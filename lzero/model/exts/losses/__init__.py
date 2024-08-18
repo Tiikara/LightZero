@@ -1,6 +1,19 @@
 import torch
 import torch.nn.functional as F
 
+def norm_l1(x, eps=1e-6):
+    return x / (x.sum(dim=-1).unsqueeze(-1) + eps)
+
+def sign_preserving_normalization(x, epsilon=1e-10):
+    # Разделяем положительные и отрицательные значения
+    pos = torch.max(x, torch.zeros_like(x))
+    neg = torch.abs(torch.min(x, torch.zeros_like(x)))
+
+    total = torch.sum(pos, dim=-1) + torch.sum(neg, dim=-1) + epsilon
+    pos_norm = pos / total
+    neg_norm = neg / total
+
+    return pos_norm - neg_norm
 
 def entropy_softmax(logits):
     prob_latent = F.softmax(logits, dim=-1)
@@ -9,8 +22,7 @@ def entropy_softmax(logits):
     return -(prob_latent * log_prob_latent).sum(dim=-1)
 
 def entropy_linear(logits, eps=1e-6):
-    p = logits / (logits.sum(dim=-1).unsqueeze(-1) + eps)
-    return entropy(p)
+    return entropy(norm_l1(logits))
 
 def entropy(logits, eps=1e-6):
     return -(logits * torch.log(logits + eps)).sum(dim=-1)
