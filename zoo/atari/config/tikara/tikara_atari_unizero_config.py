@@ -85,7 +85,7 @@ atari_unizero_config = dict(
                     ),
                 ),
                 num_capsules=128,
-                head_type='simnorm_classification',
+                head_type='linear',
                 head=dict(
                     caps=dict(
                         use_linear_input_for_caps=False,
