@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
-from lzero.model.exts.losses import entropy_softmax, entropy, entropy_linear, norm_l1
+from lzero.model.exts.losses import entropy_softmax, entropy, entropy_linear, norm_l1, log_cosh_loss
 
 logits_observations = torch.tensor([
     [0., 0., 0.],
@@ -30,3 +30,6 @@ print("\n=== Entropy Linear")
 print(entropy_linear(logits_observations))
 
 print(np.log(3))
+
+print(torch.cosh(torch.tensor([-3566]) + eps))
+print(log_cosh_loss(torch.tensor([-3566]), torch.tensor([0])))

@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import math
 
 def norm_l1(x, eps=1e-6):
     return x / (x.sum(dim=-1).unsqueeze(-1) + eps)
@@ -15,9 +16,9 @@ def sign_preserving_normalization(x, epsilon=1e-10):
 
     return pos_norm - neg_norm
 
-def log_cosh_loss(x, y, eps=1e-6):
-    ey_t = x - y
-    return torch.log(torch.cosh(ey_t + eps))
+def log_cosh_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+    x = y_pred - y_true
+    return x + torch.nn.functional.softplus(-2. * x) - math.log(2.0) # stable: torch.log(torch.cosh(x))
 
 def entropy_softmax(logits):
     prob_latent = F.softmax(logits, dim=-1)
