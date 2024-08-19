@@ -19,7 +19,7 @@ from .transformer import Transformer, TransformerConfig
 from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcache
 from .utils import WorldModelOutput, quantize_state
 from lzero.model.exts.capsnet_layers import caps_dir_loss, caps_dir_loss_se
-from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic
+from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic, log_cosh_loss
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -1015,7 +1015,7 @@ class WorldModel(nn.Module):
 
             beta_entropy = 0.1
             loss_obs = reg_loss_entropy * beta_entropy + loss_mse
-        elif self.predict_latent_loss_type == 'softmax_kl_entropy':
+        elif self.predict_latent_loss_type == 'log_cosh_entropy':
             batch_size, num_features = logits_observations.shape
 
             max_entropy = np.log(num_features)
@@ -1027,15 +1027,10 @@ class WorldModel(nn.Module):
                 target_value=0.5
             )
 
-            loss_sm = F.kl_div(
-                F.log_softmax(logits_observations, dim=-1),
-                F.log_softmax(labels_observations, dim=-1),
-                log_target=True,
-                reduction='none'
-            ).mean(dim=-1)
+            loss_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
 
             beta_entropy = 0.1
-            loss_obs = reg_loss_entropy * beta_entropy + loss_sm
+            loss_obs = reg_loss_entropy * beta_entropy + loss_pred
         elif self.predict_latent_loss_type == 'group_kl':
             # Group KL loss, group features and calculate KL divergence within each group
             batch_size, num_features = logits_observations.shape

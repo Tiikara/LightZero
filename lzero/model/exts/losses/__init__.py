@@ -15,6 +15,10 @@ def sign_preserving_normalization(x, epsilon=1e-10):
 
     return pos_norm - neg_norm
 
+def log_cosh_loss(x, y, eps=1e-6):
+    ey_t = x - y
+    return torch.log(torch.cosh(ey_t + eps))
+
 def entropy_softmax(logits):
     prob_latent = F.softmax(logits, dim=-1)
     log_prob_latent = F.log_softmax(logits, dim=-1)
