@@ -19,7 +19,8 @@ from .transformer import Transformer, TransformerConfig
 from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcache
 from .utils import WorldModelOutput, quantize_state
 from lzero.model.exts.capsnet_layers import caps_dir_loss, caps_dir_loss_se
-from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic, log_cosh_loss
+from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic, log_cosh_loss, \
+    smooth_quadratic_dead_zone_regularization
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -1025,6 +1026,23 @@ class WorldModel(nn.Module):
             reg_loss_entropy = target_value_loss_quadratic(
                 value=reg_loss_entropy,
                 target_value=0.5
+            )
+
+            loss_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
+
+            beta_entropy = 0.1
+            loss_obs = reg_loss_entropy * beta_entropy + loss_pred
+        elif self.predict_latent_loss_type == 'log_cosh_entropy_dead_zone':
+            batch_size, num_features = logits_observations.shape
+
+            max_entropy = np.log(num_features)
+
+            reg_loss_entropy = entropy_softmax(logits_observations) / max_entropy
+
+            reg_loss_entropy = smooth_quadratic_dead_zone_regularization(
+                reg_loss_entropy,
+                0.25,
+                0.75
             )
 
             loss_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)

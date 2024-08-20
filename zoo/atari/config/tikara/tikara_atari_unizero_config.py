@@ -3,7 +3,7 @@ import time
 from zoo.atari.config.atari_env_action_space_map import atari_env_action_space_map
 import torch
 
-env_id = 'DemonAttackNoFrameskip-v4'  # You can specify any Atari game here
+env_id = 'PongNoFrameskip-v4'  # You can specify any Atari game here
 action_space_size = atari_env_action_space_map[env_id]
 
 # ==============================================================
@@ -119,7 +119,7 @@ atari_unizero_config = dict(
                 # latent_recon_loss_weight=0.1,
                 # perceptual_loss_weight=0.1,
                 # predict_latent_loss_type='mse'
-                predict_latent_loss_type='log_cosh_entropy',
+                predict_latent_loss_type='log_cosh_entropy_dead_zone',
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
                 obs_loss_weight=10.  # 10. - UniZero

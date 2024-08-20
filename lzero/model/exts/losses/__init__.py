@@ -42,6 +42,15 @@ def quadratic_dead_zone_regularization(x, T1, T2, alpha=1.0):
     return alpha * error**2
 
 def smooth_quadratic_dead_zone_regularization(x, T1, T2, alpha=1.0, epsilon=1e-6):
+    """
+    d/dx [alpha * (error_low + error_high)^2]
+        = 2 * alpha * (error_low + error_high) * d/dx(error_low + error_high)
+        = alpha * (error_low + error_high) * (
+            -(T1 - x) / sqrt((T1 - x)^2 + ε^2) +
+            (x - T2) / sqrt((x - T2)^2 + ε^2)
+          )
+    """
+
     smooth_relu = lambda x_r: torch.sqrt(x_r**2 + epsilon**2) + x_r
 
     error_low = 0.5 * (smooth_relu(T1 - x) - (T1 - x))
