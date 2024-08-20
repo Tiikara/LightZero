@@ -40,6 +40,8 @@ from torch import nn
 import timm
 from .caps_sem import CapSEM
 from .simple_classification_model import SimpleClassificationModel
+from .spatial_softmax import SpatialSoftmax
+from .spatial_softmax_positional import RotarySpatialSoftmax
 from .torch_encodings import Summer, PositionalEncodingPermute2D
 from .vae_net import VAENet
 
@@ -517,6 +519,21 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                     self.embedding_dim,
                     bias=False
                 ),
+            )
+
+            self.out_create_layers = []
+        elif head_type == 'spatial_softmax':
+            assert self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size % 2 == 0
+
+            self.head = nn.Sequential(
+                RotarySpatialSoftmax(
+                    pos_dim=64
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * 64,
+                    self.embedding_dim,
+                    bias=False
+                )
             )
 
             self.out_create_layers = []
