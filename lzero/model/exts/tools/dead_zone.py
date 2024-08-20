@@ -2,14 +2,15 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-from lzero.model.exts.losses import dead_zone_regularization, quadratic_dead_zone_regularization
+from lzero.model.exts.losses import dead_zone_regularization, quadratic_dead_zone_regularization, \
+    smooth_quadratic_dead_zone_regularization
 
 T1, T2 = 0.25, 0.75
 alpha = 1.0
 
 x = torch.linspace(-0.5, 1.5, 1000)
 
-y = quadratic_dead_zone_regularization(x, T1, T2, alpha)
+y = smooth_quadratic_dead_zone_regularization(x, T1, T2, alpha)
 
 x_np = x.numpy()
 y_np = y.numpy()
