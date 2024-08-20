@@ -17,6 +17,7 @@ def sign_preserving_normalization(x, epsilon=1e-10):
     return pos_norm - neg_norm
 
 def log_cosh_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+    # log(cosh(x)) = log((exp(x) + exp(-x)) / 2) = log(exp(x) * (1 + exp(-2x)) / 2 = x + log(1 + exp(-2x)) - log(2)
     x = y_pred - y_true
     return x + torch.nn.functional.softplus(-2. * x) - math.log(2.0) # stable: torch.log(torch.cosh(x))
 
