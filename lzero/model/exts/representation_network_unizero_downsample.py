@@ -523,8 +523,6 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
             self.out_create_layers = []
         elif head_type == 'spatial_softmax':
-            assert self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size % 2 == 0
-
             self.head = nn.Sequential(
                 RotarySpatialSoftmax(
                     pos_dim=64
