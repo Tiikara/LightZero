@@ -9,7 +9,7 @@ from .torch_encodings import PositionalEncodingPermute2D, Summer
 
 class DownSampleFullPos(nn.Module):
 
-    def __init__(self, observation_shape: SequenceType, out_channels: int,
+    def __init__(self, observation_shape: SequenceType, out_channels: int = 64,
                  activation: nn.Module = nn.ReLU(inplace=True),
                  norm_type: Optional[str] = 'BN',
                  ) -> None:
@@ -30,8 +30,6 @@ class DownSampleFullPos(nn.Module):
         assert norm_type in ['BN', 'LN'], "norm_type must in ['BN', 'LN']"
 
         self.observation_shape = observation_shape
-
-        self.first_positional = Summer(PositionalEncodingPermute2D(observation_shape[0]))
 
         self.conv1 = nn.Conv2d(
             observation_shape[0],
@@ -76,7 +74,7 @@ class DownSampleFullPos(nn.Module):
                 ) for _ in range(1)
             ]
         )
-        self.pooling1 = nn.AvgPool2d(kernel_size=3, stride=2, padding=1)
+        self.pooling1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.resblocks3 = nn.ModuleList(
             [
                 ResBlockSummaryPositional(
@@ -84,8 +82,11 @@ class DownSampleFullPos(nn.Module):
                 ) for _ in range(1)
             ]
         )
-        self.pooling2 = nn.AvgPool2d(kernel_size=3, stride=2, padding=1)
+        self.pooling2 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.activation = activation
+
+        self.out_features = out_channels
+        self.out_size = observation_shape[1] // 8
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -95,8 +96,6 @@ class DownSampleFullPos(nn.Module):
             - output (:obj:`torch.Tensor`): :math:`(B, C_out, W_, H_)`, where B is batch size, C_out is channel, W_ is \
                 output width, H_ is output height.
         """
-        x =  self.first_positional(x)
-
         x = self.conv1(x)
         x = self.norm1(x)
         x = self.activation(x)
@@ -116,7 +115,6 @@ class DownSampleFullPos(nn.Module):
             x = self.pooling2(x)
             output = x
         else:
-            x = self.pooling2(x)
-            output = x
+            raise " Not supported"
 
         return output

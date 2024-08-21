@@ -13,6 +13,8 @@ from ditk import logging
 from lzero.model.common import SimNorm
 from lzero.model.common import NormByType
 from functools import partial
+
+from .down_sample_full_pos import DownSampleFullPos
 from .efficientnet_v2 import MBConvConfig, MBConv, ConvBNAct
 from .capsnet_layers import PrimaryCaps, RoutingCaps, Squash
 import math
@@ -89,6 +91,12 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
         if downsample_network_config.type == 'base':
             self.downsample_net = BaseDownSample(
+                observation_shape=observation_shape,
+                activation=activation,
+                norm_type=norm_type
+            )
+        elif downsample_network_config.type == 'pos':
+            self.downsample_net = DownSampleFullPos(
                 observation_shape=observation_shape,
                 activation=activation,
                 norm_type=norm_type
@@ -524,47 +532,11 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             self.out_create_layers = []
         elif head_type == 'positional':
             self.head = nn.Sequential(
-                Summer(
-                    PositionalEncodingPermute2D(self.downsample_net.out_features)
-                ),
-                ResBlock(
-                    in_channels=self.downsample_net.out_features,
-                    out_channels=self.downsample_net.out_features * 2,
-                    activation=activation,
-                    norm_type=norm_type,
-                    res_type='downsample',
-                    bias=False
-                ), # 4x4
-                ResBlock(
-                    in_channels=self.downsample_net.out_features * 2,
-                    out_channels=self.downsample_net.out_features * 2,
-                    activation=activation,
-                    norm_type=norm_type,
-                    res_type='downsample',
-                    bias=False
-                ), # 2x2
-                ResBlock(
-                    in_channels=self.downsample_net.out_features * 2,
-                    out_channels=self.downsample_net.out_features * 2,
-                    activation=activation,
-                    norm_type=norm_type,
-                    res_type='downsample',
-                    bias=False
-                ), # 1x1
                 ReshapeLastDim1D(
-                    out_features=self.downsample_net.out_features * 2
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
                 ),
-                Summer(
-                    nn.Linear(
-                        self.downsample_net.out_features * 2,
-                        self.downsample_net.out_features * 2,
-                        bias=False
-                    ),
-                ),
-                nn.LayerNorm(self.downsample_net.out_features * 2),
-                activation,
                 nn.Linear(
-                    self.downsample_net.out_features * 2,
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
                     self.embedding_dim,
                     bias=False
                 ),
