@@ -530,22 +530,6 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             )
 
             self.out_create_layers = []
-        elif head_type == 'positional':
-            self.head = nn.Sequential(
-                ReshapeLastDim1D(
-                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
-                ),
-                nn.Linear(
-                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
-                    self.embedding_dim,
-                    bias=False
-                ),
-                SimNorm(simnorm_dim=group_size)
-            )
-
-            self.out_create_layers = [
-                lambda: SimNorm(simnorm_dim=group_size)
-            ]
         elif head_type == 'vae_class':
             self.vae_net = VAENet(self.embedding_dim)
 
