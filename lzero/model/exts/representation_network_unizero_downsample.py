@@ -522,19 +522,58 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             )
 
             self.out_create_layers = []
-        elif head_type == 'spatial_softmax':
+        elif head_type == 'positional':
             self.head = nn.Sequential(
-                RotarySpatialSoftmax(
-                    pos_dim=64
+                Summer(
+                    PositionalEncodingPermute2D(self.downsample_net.out_features)
                 ),
+                ResBlock(
+                    in_channels=self.downsample_net.out_features,
+                    out_channels=self.downsample_net.out_features * 2,
+                    activation=activation,
+                    norm_type=norm_type,
+                    res_type='downsample',
+                    bias=False
+                ), # 4x4
+                ResBlock(
+                    in_channels=self.downsample_net.out_features * 2,
+                    out_channels=self.downsample_net.out_features * 2,
+                    activation=activation,
+                    norm_type=norm_type,
+                    res_type='downsample',
+                    bias=False
+                ), # 2x2
+                ResBlock(
+                    in_channels=self.downsample_net.out_features * 2,
+                    out_channels=self.downsample_net.out_features * 2,
+                    activation=activation,
+                    norm_type=norm_type,
+                    res_type='downsample',
+                    bias=False
+                ), # 1x1
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * 2
+                ),
+                Summer(
+                    nn.Linear(
+                        self.downsample_net.out_features * 2,
+                        self.downsample_net.out_features * 2,
+                        bias=False
+                    ),
+                ),
+                nn.LayerNorm(self.downsample_net.out_features * 2),
+                activation,
                 nn.Linear(
-                    self.downsample_net.out_features * 64,
+                    self.downsample_net.out_features * 2,
                     self.embedding_dim,
                     bias=False
-                )
+                ),
+                SimNorm(simnorm_dim=group_size)
             )
 
-            self.out_create_layers = []
+            self.out_create_layers = [
+                lambda: SimNorm(simnorm_dim=group_size)
+            ]
         elif head_type == 'vae_class':
             self.vae_net = VAENet(self.embedding_dim)
 

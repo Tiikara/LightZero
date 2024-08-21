@@ -20,6 +20,9 @@ class RotarySpatialSoftmax(nn.Module):
         feature = x.view(b, c, -1)  # [b, c, h*w]
         weight = F.softmax(feature / self.temperature, dim=-1)  # [b, c, h*w]
 
+        # Compute raw activation for object presence
+        presence_activation = torch.max(feature, dim=-1)[0]  # [b, c]
+
         # Reshape positional encoding
         pos_emb = self.positional(x)  # [b, pos_dim, h, w]
         pos_emb = pos_emb.view(b, self.pos_dim, -1)  # [b, pos_dim, h*w]
@@ -30,12 +33,15 @@ class RotarySpatialSoftmax(nn.Module):
         # Sum over spatial dimensions
         feature_keypoints = weighted_pos.sum(dim=-1)  # [b, c, pos_dim]
 
-        return feature_keypoints.view(b, c * self.pos_dim)
+        output = torch.cat([feature_keypoints, presence_activation.unsqueeze(-1)], dim=-1)  # [b, c, pos_dim + 1]
+
+        return output.view(b, c * (self.pos_dim + 1))
+
 
 if __name__ == "__main__":
     model = RotarySpatialSoftmax(pos_dim=32, temperature=1.0, learnable_temperature=True)
     input_tensor = torch.randn(2, 64, 20, 20)  # Example input: batch_size=2, channels=64, height=20, width=20
-    output = model(input_tensor)
+    res = model(input_tensor)
     print(f"Input shape: {input_tensor.shape}")
-    print(f"Output shape: {output.shape}")
+    print(f"Output shape: {res.shape}")
     print(f"Current temperature: {model.temperature.item()}")
