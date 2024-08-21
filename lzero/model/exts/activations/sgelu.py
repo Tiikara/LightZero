@@ -1,4 +1,6 @@
+import torch
 import torch.nn as nn
+import math
 
 class SGELU(nn.Module):
     """
@@ -11,4 +13,4 @@ class SGELU(nn.Module):
         super().__init__()
 
     def forward(self, x):
-        return torch.max(x * ((1. + torch.erf(x / torch.sqrt(2))) / 2.), x)
+        return torch.max(x * ((1. + torch.erf(x / math.sqrt(2.))) / 2.), x)

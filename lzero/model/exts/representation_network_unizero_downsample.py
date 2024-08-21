@@ -43,7 +43,7 @@ import timm
 from .caps_sem import CapSEM
 from .simple_classification_model import SimpleClassificationModel
 from .spatial_softmax import SpatialSoftmax
-from .spatial_softmax_positional import RotarySpatialSoftmax
+from .spatial_softmax_positional import SpatialSoftmaxPositional
 from .torch_encodings import Summer, PositionalEncodingPermute2D
 from .vae_net import VAENet
 

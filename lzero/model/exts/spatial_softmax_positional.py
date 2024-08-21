@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from lzero.model.exts.torch_encodings import PositionalEncodingPermute2D
 
 
-class RotarySpatialSoftmax(nn.Module):
+class SpatialSoftmaxPositional(nn.Module):
     def __init__(self, pos_dim, temperature=1.0, learnable_temperature=False):
         super().__init__()
 
@@ -39,7 +39,7 @@ class RotarySpatialSoftmax(nn.Module):
 
 
 if __name__ == "__main__":
-    model = RotarySpatialSoftmax(pos_dim=32, temperature=1.0, learnable_temperature=True)
+    model = SpatialSoftmaxPositional(pos_dim=32, temperature=1.0, learnable_temperature=True)
     input_tensor = torch.randn(2, 64, 20, 20)  # Example input: batch_size=2, channels=64, height=20, width=20
     res = model(input_tensor)
     print(f"Input shape: {input_tensor.shape}")
