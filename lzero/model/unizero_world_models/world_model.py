@@ -1096,7 +1096,7 @@ class WorldModel(nn.Module):
             # reg_loss_zeroless = (1.0 / (torch.abs(logits_observations) + epsilon)).mean(dim=-1)
 
             loss_obs = loss_obs_class + reg_loss_entropy_class * beta_entropy + reg_loss_entropy * beta_entropy
-        elif self.predict_latent_loss_type == 'cat_vae_simnorm_class':
+        elif self.predict_latent_loss_type == 'cat_vae_simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
             with torch.no_grad():
