@@ -23,6 +23,7 @@ from collections import OrderedDict
 
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, PrimaryCapsForward1D
+from .multiply_module import MultiplyModule
 from .second_dim_check import SecondDimCheck
 from .down_sample_res_net import DownSampleResNet
 from .reshape_last_dim_1d import ReshapeLastDim1D
@@ -410,6 +411,25 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             self.out_create_layers = [
                 lambda: SimNorm(simnorm_dim=group_size)
             ]
+        elif head_type == 'simnorm_positional_multiply':
+            self.head = nn.Sequential(
+                MultiplyModule(
+                    PositionalEncodingPermute2D(self.downsample_net.out_features)
+                ),
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim,
+                    bias=False
+                ),
+                SimNorm(simnorm_dim=group_size)
+            )
+
+            self.out_create_layers = [
+                lambda: SimNorm(simnorm_dim=group_size)
+            ]
         elif head_type == 'simnorm_positional':
             simnorm_positional_config = head_config.simnorm_positional
 
@@ -498,11 +518,9 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             self.out_create_layers = [
                 lambda: SimNorm(simnorm_dim=group_size)
             ]
-        elif head_type == 'simnorm_classification':
-            self.classification_model = SimpleClassificationModel(
-                channels=self.embedding_dim,
-                activation=activation,
-                group_size=group_size
+        elif head_type == 'linear_classification':
+            self.classification_model = nn.Sequential(
+                nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
             )
 
             self.head = nn.Sequential(
@@ -518,27 +536,6 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
             self.out_create_layers = []
         elif head_type == 'linear':
-            self.head = nn.Sequential(
-                ReshapeLastDim1D(
-                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
-                ),
-                nn.Linear(
-                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
-                    self.embedding_dim,
-                    bias=False
-                ),
-            )
-
-            self.out_create_layers = []
-        elif head_type == 'vae_class':
-            self.vae_net = VAENet(self.embedding_dim)
-
-            self.classification_model = SimpleClassificationModel(
-                channels=self.embedding_dim,
-                activation=activation,
-                group_size=group_size
-            )
-
             self.head = nn.Sequential(
                 ReshapeLastDim1D(
                     out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size

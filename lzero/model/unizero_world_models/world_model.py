@@ -1096,37 +1096,31 @@ class WorldModel(nn.Module):
             # reg_loss_zeroless = (1.0 / (torch.abs(logits_observations) + epsilon)).mean(dim=-1)
 
             loss_obs = loss_obs_class + reg_loss_entropy_class * beta_entropy + reg_loss_entropy * beta_entropy
-        elif self.predict_latent_loss_type == 'vae_class':
-            # VAE
-            predict_z, predict_mu, predict_logvar = self.tokenizer.encoder.vae_net(logits_observations)
+        elif self.predict_latent_loss_type == 'cat_vae_simnorm_class':
+            # CLASS VAE
+            logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
             with torch.no_grad():
-                repr_z, _, _ = target_tokenizer.encoder.vae_net(labels_observations)
-
-            kl_loss_predict = -0.5 * (1 + predict_logvar - predict_mu.pow(2) - predict_logvar.exp()).mean(dim=-1)
-
-            # CLASS
-            logits_observations_class = self.tokenizer.encoder.classification_model(predict_z)
-            with torch.no_grad():
-                labels_observations_class = target_tokenizer.encoder.classification_model(repr_z)
+                labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
 
             batch_size, num_features = logits_observations_class.shape
             epsilon = 1e-6
             logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size) + epsilon
             labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size) + epsilon
 
+            logits_reshaped = F.gumbel_softmax(logits_reshaped)
+            labels_reshaped = F.gumbel_softmax(labels_reshaped)
+
             loss_obs_class = F.kl_div(logits_reshaped.log(), labels_reshaped, reduction='none').sum(dim=-1).mean(dim=-1)
 
-            loss_obs = loss_obs_class + 0.1 * kl_loss_predict
-        elif self.predict_latent_loss_type == 'vae_class':
-            predict_z, predict_mu, predict_logvar = self.tokenizer.encoder.vae_net(logits_observations)
-            with torch.no_grad():
-                repr_z, _, _ = target_tokenizer.encoder.vae_net(labels_observations)
+            # Entropy regularization
+            max_entropy = np.log(num_features)
+            reg_loss_entropy = entropy_softmax(logits_observations) / max_entropy
+            reg_loss_entropy = target_value_loss_quadratic(
+                value=reg_loss_entropy,
+                target_value=0.5
+            )
 
-            recon_loss = F.mse_loss(predict_z, repr_z, reduction='none').mean(dim=-1)
-
-            kl_loss_predict = -0.5 * (1 + predict_logvar - predict_mu.pow(2) - predict_logvar.exp()).mean(dim=-1)
-
-            loss_obs = recon_loss + 0.1 * kl_loss_predict
+            loss_obs = loss_obs_class + 0.1 * reg_loss_entropy
         elif self.predict_latent_loss_type == 'caps':
             batch_size, num_features = logits_observations.shape
 
