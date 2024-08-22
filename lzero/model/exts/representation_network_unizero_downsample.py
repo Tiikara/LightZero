@@ -523,12 +523,6 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             linear_classification_config = head_config.linear_classification
 
             classification_model_layers = []
-
-            if linear_classification_config.use_batch_normalization_before:
-                classification_model_layers.append(
-                    nn.BatchNorm1d(self.embedding_dim)
-                )
-
             classification_model_layers.append(
                 nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
             )

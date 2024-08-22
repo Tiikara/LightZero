@@ -63,8 +63,8 @@ atari_unizero_config = dict(
         # TODO: only for debug
         # collect_max_episode_steps=int(50),
         # eval_max_episode_steps=int(50),
-        collect_max_episode_steps=3000, # demon attack: changed
-        eval_max_episode_steps=3000, # demon attack: changed
+        # collect_max_episode_steps=3000, # demon attack: changed
+        # eval_max_episode_steps=3000, # demon attack: changed
     ),
     policy=dict(
         model=dict(
@@ -90,8 +90,7 @@ atari_unizero_config = dict(
                 head_type='linear_classification',
                 head=dict(
                     linear_classification=dict(
-                        use_batch_normalization_before=False,
-                        use_last_layer_norm=True
+                        use_last_layer_norm=False
                     ),
                     linear=dict(
                         use_coords=False
@@ -149,7 +148,8 @@ atari_unizero_config = dict(
         n_episode=n_episode,
         replay_buffer_size=int(1e6),
         collector_env_num=collector_env_num,
-        evaluator_env_num=evaluator_env_num
+        evaluator_env_num=evaluator_env_num,
+        grad_clip_value=20.,
     ),
 )
 atari_unizero_config = EasyDict(atari_unizero_config)
