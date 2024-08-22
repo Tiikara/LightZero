@@ -548,7 +548,7 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
             if linear_classification_config.use_last_layer_norm:
                 head_layers.append(
-                    nn.BatchNorm1d(self.embedding_dim)
+                    nn.LayerNorm(self.embedding_dim)
                 )
 
             self.head = nn.Sequential(
@@ -559,7 +559,7 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
             if linear_classification_config.use_last_layer_norm:
                 self.out_create_layers.append(
-                    lambda: nn.BatchNorm1d(self.embedding_dim)
+                    lambda: nn.LayerNorm(self.embedding_dim)
                 )
         elif head_type == 'linear_classification_2fc':
             self.classification_model = nn.Sequential(
