@@ -1104,11 +1104,11 @@ class WorldModel(nn.Module):
 
             batch_size, num_features = logits_observations_class.shape
             epsilon = 1e-6
-            logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size) + epsilon
-            labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size) + epsilon
+            logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size)
+            labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size)
 
-            logits_reshaped_sm = F.gumbel_softmax(logits_reshaped)
-            labels_reshaped_sm = F.gumbel_softmax(labels_reshaped)
+            logits_reshaped_sm = F.gumbel_softmax(logits_reshaped) + epsilon
+            labels_reshaped_sm = F.gumbel_softmax(labels_reshaped) + epsilon
 
             loss_obs_class = F.kl_div(logits_reshaped_sm.log(), labels_reshaped_sm, reduction='none').sum(dim=-1).mean(dim=-1)
 
