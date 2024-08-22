@@ -556,6 +556,11 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             )
 
             self.out_create_layers = []
+
+            if linear_classification_config.use_last_layer_norm:
+                self.out_create_layers.append(
+                    lambda: nn.BatchNorm1d(self.embedding_dim)
+                )
         elif head_type == 'linear_classification_2fc':
             self.classification_model = nn.Sequential(
                 ResFCBlock(
