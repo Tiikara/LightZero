@@ -1113,15 +1113,14 @@ class WorldModel(nn.Module):
             loss_obs_class = F.kl_div(logits_reshaped_sm.log(), labels_reshaped_sm, reduction='none').sum(dim=-1).mean(dim=-1)
 
             # Entropy regularization - Latent
-            max_entropy = np.log(num_features)
-            #reg_loss_entropy = entropy_softmax(logits_observations) / max_entropy
+            #reg_loss_entropy = entropy_softmax(logits_observations) /  np.log(num_features)
             #reg_loss_entropy = target_value_loss_quadratic(
             #    value=reg_loss_entropy,
             #    target_value=0.5
             #).mean(dim=-1)
 
             # Entropy regularization - Class
-            class_loss_entropy = entropy(logits_reshaped_sm) / max_entropy
+            class_loss_entropy = entropy(logits_reshaped_sm) / np.log(self.group_size)
             class_loss_entropy = target_value_loss_quadratic(
                 value=class_loss_entropy,
                 target_value=0.5
