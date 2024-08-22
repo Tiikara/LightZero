@@ -520,11 +520,22 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 lambda: SimNorm(simnorm_dim=group_size)
             ]
         elif head_type == 'linear_classification':
-            self.classification_model = nn.Sequential(
+            linear_classification_config = head_config.linear_classification
+
+            classification_model_layers = []
+
+            if linear_classification_config.use_batch_normalization_before:
+                classification_model_layers.append(
+                    nn.BatchNorm1d(self.embedding_dim)
+                )
+
+            classification_model_layers.append(
                 nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
             )
 
-            self.head = nn.Sequential(
+            self.classification_model = nn.Sequential(*classification_model_layers)
+
+            head_layers = [
                 ReshapeLastDim1D(
                     out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
                 ),
@@ -533,6 +544,15 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                     self.embedding_dim,
                     bias=False
                 ),
+            ]
+
+            if linear_classification_config.use_last_layer_norm:
+                head_layers.append(
+                    nn.BatchNorm1d(self.embedding_dim)
+                )
+
+            self.head = nn.Sequential(
+                *head_layers
             )
 
             self.out_create_layers = []

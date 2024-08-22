@@ -89,6 +89,10 @@ atari_unizero_config = dict(
                 num_capsules=128,
                 head_type='linear_classification',
                 head=dict(
+                    linear_classification=dict(
+                        use_batch_normalization_before=False,
+                        use_last_layer_norm=True
+                    ),
                     linear=dict(
                         use_coords=False
                     ),
