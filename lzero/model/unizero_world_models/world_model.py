@@ -20,7 +20,7 @@ from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcac
 from .utils import WorldModelOutput, quantize_state
 from lzero.model.exts.capsnet_layers import caps_dir_loss, caps_dir_loss_se
 from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic, log_cosh_loss, \
-    smooth_quadratic_dead_zone_regularization
+    smooth_quadratic_dead_zone_regularization, entropy
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -1107,20 +1107,27 @@ class WorldModel(nn.Module):
             logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size) + epsilon
             labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size) + epsilon
 
-            logits_reshaped = F.gumbel_softmax(logits_reshaped)
-            labels_reshaped = F.gumbel_softmax(labels_reshaped)
+            logits_reshaped_sm = F.gumbel_softmax(logits_reshaped)
+            labels_reshaped_sm = F.gumbel_softmax(labels_reshaped)
 
-            loss_obs_class = F.kl_div(logits_reshaped.log(), labels_reshaped, reduction='none').sum(dim=-1).mean(dim=-1)
+            loss_obs_class = F.kl_div(logits_reshaped_sm.log(), labels_reshaped_sm, reduction='none').sum(dim=-1).mean(dim=-1)
 
-            # Entropy regularization
+            # Entropy regularization - Latent
             max_entropy = np.log(num_features)
             reg_loss_entropy = entropy_softmax(logits_observations) / max_entropy
             reg_loss_entropy = target_value_loss_quadratic(
                 value=reg_loss_entropy,
                 target_value=0.5
-            )
+            ).mean(dim=-1)
 
-            loss_obs = loss_obs_class + 0.1 * reg_loss_entropy
+            # Entropy regularization - Class
+            class_loss_entropy = entropy(logits_reshaped) / max_entropy
+            class_loss_entropy = target_value_loss_quadratic(
+                value=class_loss_entropy,
+                target_value=0.5
+            ).mean(dim=-1)
+
+            loss_obs = loss_obs_class + 0.1 * reg_loss_entropy + 0.1 * class_loss_entropy
         elif self.predict_latent_loss_type == 'caps':
             batch_size, num_features = logits_observations.shape
 
