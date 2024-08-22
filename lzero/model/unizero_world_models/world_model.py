@@ -1114,20 +1114,20 @@ class WorldModel(nn.Module):
 
             # Entropy regularization - Latent
             max_entropy = np.log(num_features)
-            reg_loss_entropy = entropy_softmax(logits_observations) / max_entropy
-            reg_loss_entropy = target_value_loss_quadratic(
-                value=reg_loss_entropy,
-                target_value=0.5
-            ).mean(dim=-1)
+            #reg_loss_entropy = entropy_softmax(logits_observations) / max_entropy
+            #reg_loss_entropy = target_value_loss_quadratic(
+            #    value=reg_loss_entropy,
+            #    target_value=0.5
+            #).mean(dim=-1)
 
             # Entropy regularization - Class
-            class_loss_entropy = entropy(logits_reshaped) / max_entropy
+            class_loss_entropy = entropy(logits_reshaped_sm) / max_entropy
             class_loss_entropy = target_value_loss_quadratic(
                 value=class_loss_entropy,
                 target_value=0.5
             ).mean(dim=-1)
 
-            loss_obs = loss_obs_class + 0.1 * reg_loss_entropy + 0.1 * class_loss_entropy
+            loss_obs = loss_obs_class + 0.1 * class_loss_entropy
         elif self.predict_latent_loss_type == 'caps':
             batch_size, num_features = logits_observations.shape
 
