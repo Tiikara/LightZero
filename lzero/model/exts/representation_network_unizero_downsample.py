@@ -24,6 +24,7 @@ from collections import OrderedDict
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, PrimaryCapsForward1D
 from .multiply_module import MultiplyModule
+from .res_fc_block import ResFCBlock
 from .second_dim_check import SecondDimCheck
 from .down_sample_res_net import DownSampleResNet
 from .reshape_last_dim_1d import ReshapeLastDim1D
@@ -521,6 +522,28 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
         elif head_type == 'linear_classification':
             self.classification_model = nn.Sequential(
                 nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
+            )
+
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim,
+                    bias=False
+                ),
+            )
+
+            self.out_create_layers = []
+        elif head_type == 'linear_classification_2fc':
+            self.classification_model = nn.Sequential(
+                ResFCBlock(
+                    in_channels = self.embedding_dim,
+                    activation = activation,
+                    norm_type = norm_type,
+                    bias = False
+                )
             )
 
             self.head = nn.Sequential(
