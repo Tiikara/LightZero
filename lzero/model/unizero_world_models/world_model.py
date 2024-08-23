@@ -1107,8 +1107,8 @@ class WorldModel(nn.Module):
             logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size)
             labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size)
 
-            logits_reshaped_sm = F.gumbel_softmax(logits_reshaped) + epsilon
-            labels_reshaped_sm = F.gumbel_softmax(labels_reshaped) + epsilon
+            logits_reshaped_sm = F.gumbel_softmax(logits_reshaped, dim=-1) + epsilon
+            labels_reshaped_sm = F.gumbel_softmax(labels_reshaped, dim=-1) + epsilon
 
             loss_obs_class = F.kl_div(logits_reshaped_sm.log(), labels_reshaped_sm, reduction='none').sum(dim=-1).mean(dim=-1)
 
@@ -1138,9 +1138,9 @@ class WorldModel(nn.Module):
             logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size)
             labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size)
 
-            logits_reshaped_sm = F.softmax(logits_reshaped)
-            logits_reshaped_log_sm = F.log_softmax(logits_reshaped)
-            labels_reshaped_log_sm = F.log_softmax(labels_reshaped)
+            logits_reshaped_sm = F.softmax(logits_reshaped, dim=-1)
+            logits_reshaped_log_sm = F.log_softmax(logits_reshaped, dim=-1)
+            labels_reshaped_log_sm = F.log_softmax(labels_reshaped, dim=-1)
 
             loss_obs_class = F.kl_div(
                 logits_reshaped_log_sm,
