@@ -33,6 +33,9 @@ def entropy_linear(logits, eps=1e-6):
 def entropy(logits, eps=1e-6):
     return -(logits * torch.log(logits + eps)).sum(dim=-1)
 
+def entropy_with_log(logits, logits_log):
+    return -(logits * logits_log).sum(dim=-1)
+
 
 def target_value_loss_relu(value, target_value, value_range):
     torch.relu(torch.abs(value - target_value) - value_range)

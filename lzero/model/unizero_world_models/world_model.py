@@ -20,7 +20,7 @@ from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcac
 from .utils import WorldModelOutput, quantize_state
 from lzero.model.exts.capsnet_layers import caps_dir_loss, caps_dir_loss_se
 from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic, log_cosh_loss, \
-    smooth_quadratic_dead_zone_regularization, entropy
+    smooth_quadratic_dead_zone_regularization, entropy, entropy_with_log
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -1121,6 +1121,36 @@ class WorldModel(nn.Module):
 
             # Entropy regularization - Class
             class_loss_entropy = entropy(logits_reshaped_sm) / np.log(self.group_size)
+            class_loss_entropy = target_value_loss_quadratic(
+                value=class_loss_entropy,
+                target_value=0.5
+            ).mean(dim=-1)
+
+            loss_obs = loss_obs_class + 0.1 * class_loss_entropy
+        elif self.predict_latent_loss_type == 'simnorm_class_entropy':
+            # CLASS VAE
+            logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
+            with torch.no_grad():
+                labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
+
+            batch_size, num_features = logits_observations_class.shape
+            epsilon = 1e-6
+            logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size)
+            labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size)
+
+            logits_reshaped_sm = F.softmax(logits_reshaped)
+            logits_reshaped_log_sm = F.log_softmax(logits_reshaped)
+            labels_reshaped_log_sm = F.log_softmax(labels_reshaped)
+
+            loss_obs_class = F.kl_div(
+                logits_reshaped_log_sm,
+                labels_reshaped_log_sm,
+                log_target=True,
+                reduction='none'
+            ).sum(dim=-1).mean(dim=-1)
+
+            # Entropy regularization - Class
+            class_loss_entropy = entropy_with_log(logits_reshaped_sm, logits_reshaped_log_sm) / np.log(self.group_size)
             class_loss_entropy = target_value_loss_quadratic(
                 value=class_loss_entropy,
                 target_value=0.5
