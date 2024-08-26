@@ -525,14 +525,15 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             classification_model_layers = []
 
             if linear_classification_config.use_2fc_classifier:
-                classification_model_layers.append(
-                    ResFCBlock(
-                        in_channels = self.embedding_dim,
-                        activation = activation,
-                        norm_type = norm_type,
-                        bias = False
+                for _ in range(linear_classification_config.num_layers):
+                    classification_model_layers.append(
+                        ResFCBlock(
+                            in_channels = self.embedding_dim,
+                            activation = activation,
+                            norm_type = norm_type,
+                            bias = False
+                        )
                     )
-                )
             else:
                 classification_model_layers.append(
                     nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
