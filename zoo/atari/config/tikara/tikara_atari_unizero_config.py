@@ -92,7 +92,7 @@ atari_unizero_config = dict(
                     linear_classification=dict(
                         use_last_layer_norm=False,
                         use_2fc_classifier=True,
-                        num_layers=2,
+                        num_layers=1,
                     ),
                     linear=dict(
                         use_coords=False
