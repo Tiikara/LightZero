@@ -151,7 +151,7 @@ atari_unizero_config = dict(
         replay_buffer_size=int(1e6),
         collector_env_num=collector_env_num,
         evaluator_env_num=evaluator_env_num,
-        grad_clip_value=20.,
+        grad_clip_value=20., # UniZero - 5
     ),
 )
 atari_unizero_config = EasyDict(atari_unizero_config)
