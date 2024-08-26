@@ -1142,18 +1142,20 @@ class WorldModel(nn.Module):
             logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size)
             labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size)
 
-            logits_reshaped_sm = F.gumbel_softmax(logits_reshaped, dim=-1) + epsilon
+            logits_reshaped_gumbel_sm = F.gumbel_softmax(logits_reshaped, dim=-1) + epsilon
             labels_reshaped_sm_log = F.log_softmax(labels_reshaped, dim=-1)
 
             loss_obs_class = F.kl_div(
-                logits_reshaped_sm.log(),
+                logits_reshaped_gumbel_sm.log(),
                 labels_reshaped_sm_log,
                 log_target=True,
                 reduction='none'
             ).sum(dim=-1).mean(dim=-1)
 
             # Entropy regularization - Class
-            class_loss_entropy = entropy(logits_reshaped_sm) / np.log(self.group_size)
+            logits_reshaped_sm = F.softmax(logits_reshaped, dim=-1)
+            logits_reshaped_sm_log = F.log_softmax(logits_reshaped, dim=-1)
+            class_loss_entropy = entropy_with_log(logits_reshaped_sm, logits_reshaped_sm_log) / np.log(self.group_size)
             class_loss_entropy = target_value_loss_quadratic(
                 value=class_loss_entropy,
                 target_value=0.5
