@@ -25,6 +25,7 @@ from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, PrimaryCapsForward1D
 from .multiply_module import MultiplyModule
 from .res_fc_block import ResFCBlock
+from .res_feed_forward_block import ResFeedForwardBlock
 from .second_dim_check import SecondDimCheck
 from .down_sample_res_net import DownSampleResNet
 from .reshape_last_dim_1d import ReshapeLastDim1D
@@ -524,8 +525,8 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
             classification_model_layers = []
 
-            if linear_classification_config.use_2fc_classifier:
-                for _ in range(linear_classification_config.num_layers):
+            if linear_classification_config.type_classifier == '2fc':
+                for _ in range(linear_classification_config.classifier_num_layers):
                     classification_model_layers.append(
                         ResFCBlock(
                             in_channels = self.embedding_dim,
@@ -534,7 +535,21 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                             bias = False
                         )
                     )
-            else:
+            elif linear_classification_config.type_classifier == 'res_feed_forward':
+                for _ in range(linear_classification_config.classifier_num_layers):
+                    classification_model_layers.append(
+                        ResFeedForwardBlock(
+                            in_channels = self.embedding_dim,
+                            hidden_channels = self.embedding_dim,
+                            activation = activation,
+                            bias = False
+                        )
+                    )
+
+                classification_model_layers.append(
+                    nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
+                )
+            elif linear_classification_config.type_classifier == 'linear':
                 classification_model_layers.append(
                     nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
                 )

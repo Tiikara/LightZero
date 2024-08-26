@@ -90,9 +90,9 @@ atari_unizero_config = dict(
                 head_type='linear_classification',
                 head=dict(
                     linear_classification=dict(
+                        type_classifier='2fc',
                         use_last_layer_norm=False,
-                        use_2fc_classifier=True,
-                        num_layers=1,
+                        classifier_num_layers=1,
                     ),
                     linear=dict(
                         use_coords=False

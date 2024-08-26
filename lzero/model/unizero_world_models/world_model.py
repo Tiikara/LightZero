@@ -1162,6 +1162,40 @@ class WorldModel(nn.Module):
             ).mean(dim=-1)
 
             loss_obs = loss_obs_class + 0.1 * class_loss_entropy
+        elif self.predict_latent_loss_type == 'cat_vae_single_simnorm_class_entropy_log_cosh_sim':
+            # CLASS VAE
+            logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
+            with torch.no_grad():
+                labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
+
+            batch_size, num_features = logits_observations_class.shape
+            epsilon = 1e-6
+            logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size)
+            labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size)
+
+            logits_reshaped_gumbel_sm = F.gumbel_softmax(logits_reshaped, dim=-1) + epsilon
+            labels_reshaped_sm_log = F.log_softmax(labels_reshaped, dim=-1)
+
+            loss_obs_class = F.kl_div(
+                logits_reshaped_gumbel_sm.log(),
+                labels_reshaped_sm_log,
+                log_target=True,
+                reduction='none'
+            ).sum(dim=-1).mean(dim=-1)
+
+            # Entropy regularization - Class
+            logits_reshaped_sm = F.softmax(logits_reshaped, dim=-1)
+            logits_reshaped_sm_log = F.log_softmax(logits_reshaped, dim=-1)
+            class_loss_entropy = entropy_with_log(logits_reshaped_sm, logits_reshaped_sm_log) / np.log(self.group_size)
+            class_loss_entropy = target_value_loss_quadratic(
+                value=class_loss_entropy,
+                target_value=0.5
+            ).mean(dim=-1)
+
+            # Prediction Error
+            loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
+
+            loss_obs = loss_obs_class + 0.1 * loss_obs_pred + 0.1 * class_loss_entropy
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
