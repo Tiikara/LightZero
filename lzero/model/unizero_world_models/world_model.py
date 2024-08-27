@@ -19,6 +19,7 @@ from .transformer import Transformer, TransformerConfig
 from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcache
 from .utils import WorldModelOutput, quantize_state
 from lzero.model.exts.capsnet_layers import caps_dir_loss, caps_dir_loss_se
+from ..exts.funcs import log_gumbel_softmax
 from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic, log_cosh_loss, \
     smooth_quadratic_dead_zone_regularization, entropy, entropy_with_log
 
@@ -1173,11 +1174,11 @@ class WorldModel(nn.Module):
             logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size)
             labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size)
 
-            logits_reshaped_gumbel_sm = F.gumbel_softmax(logits_reshaped, dim=-1) + epsilon
+            logits_reshaped_gumbel_sm_log = log_gumbel_softmax(logits_reshaped, dim=-1)
             labels_reshaped_sm_log = F.log_softmax(labels_reshaped, dim=-1)
 
             loss_obs_class = F.kl_div(
-                logits_reshaped_gumbel_sm.log(),
+                logits_reshaped_gumbel_sm_log,
                 labels_reshaped_sm_log,
                 log_target=True,
                 reduction='none'
@@ -1195,7 +1196,11 @@ class WorldModel(nn.Module):
             # Prediction Error
             loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
 
-            loss_obs = loss_obs_pred + 0.01 * loss_obs_class + 0.01 * class_loss_entropy
+            loss_obs_pred_weight = 1.
+            loss_obs_class_weight = 0.1
+            class_loss_entropy_weight = 0.01
+
+            loss_obs = loss_obs_pred * loss_obs_pred_weight + loss_obs_class_weight * loss_obs_class + class_loss_entropy_weight * class_loss_entropy
         elif self.predict_latent_loss_type == 'vae_single_simnorm_class_entropy_log_cosh_sim':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
