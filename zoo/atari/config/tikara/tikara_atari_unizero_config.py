@@ -87,13 +87,12 @@ atari_unizero_config = dict(
                     ),
                 ),
                 num_capsules=128,
-                head_type='linear_classification',
+                classification=dict(
+                    type='res_feed_forward',
+                    num_layers=1
+                ),
+                head_type='linear',
                 head=dict(
-                    linear_classification=dict(
-                        type_classifier='res_feed_forward',
-                        use_last_layer_norm=False,
-                        classifier_num_layers=1,
-                    ),
                     linear=dict(
                         use_coords=False
                     ),

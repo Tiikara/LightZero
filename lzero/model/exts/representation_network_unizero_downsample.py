@@ -64,7 +64,8 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             num_capsules: int = 32,
             downsample_network_config=None,
             head_type: str = None,
-            head_config=None
+            head_config=None,
+            classification_config=None
     ) -> None:
         """
         Overview:
@@ -520,72 +521,6 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             self.out_create_layers = [
                 lambda: SimNorm(simnorm_dim=group_size)
             ]
-        elif head_type == 'linear_classification':
-            linear_classification_config = head_config.linear_classification
-
-            classification_model_layers = []
-
-            if linear_classification_config.type_classifier == '2fc':
-                for _ in range(linear_classification_config.classifier_num_layers):
-                    classification_model_layers.append(
-                        ResFCBlock(
-                            in_channels = self.embedding_dim,
-                            activation = activation,
-                            norm_type = norm_type,
-                            bias = False
-                        )
-                    )
-            elif linear_classification_config.type_classifier == 'res_feed_forward':
-                classification_model_layers.append(
-                    nn.LayerNorm(self.embedding_dim)
-                )
-
-                for _ in range(linear_classification_config.classifier_num_layers):
-                    classification_model_layers.append(
-                        ResFeedForwardBlock(
-                            in_channels = self.embedding_dim,
-                            hidden_channels = self.embedding_dim,
-                            activation = activation,
-                            bias = False
-                        )
-                    )
-
-                classification_model_layers.append(
-                    nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
-                )
-            elif linear_classification_config.type_classifier == 'linear':
-                classification_model_layers.append(
-                    nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
-                )
-
-            self.classification_model = nn.Sequential(*classification_model_layers)
-
-            head_layers = [
-                ReshapeLastDim1D(
-                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
-                ),
-                nn.Linear(
-                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
-                    self.embedding_dim,
-                    bias=False
-                ),
-            ]
-
-            if linear_classification_config.use_last_layer_norm:
-                head_layers.append(
-                    nn.LayerNorm(self.embedding_dim)
-                )
-
-            self.head = nn.Sequential(
-                *head_layers
-            )
-
-            self.out_create_layers = []
-
-            if linear_classification_config.use_last_layer_norm:
-                self.out_create_layers.append(
-                    lambda: nn.LayerNorm(self.embedding_dim)
-                )
         elif head_type == 'linear_classification_2fc':
             self.classification_model = nn.Sequential(
                 ResFCBlock(
@@ -623,6 +558,46 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             self.out_create_layers = []
         else:
             raise 'Not Supported ' + head_type
+
+        if classification_config.type is not None:
+            classification_model_layers = []
+
+            if classification_config.type == '2fc':
+                for _ in range(classification_config.num_layers):
+                    classification_model_layers.append(
+                        ResFCBlock(
+                            in_channels = self.embedding_dim,
+                            activation = activation,
+                            norm_type = norm_type,
+                            bias = False
+                        )
+                    )
+            elif classification_config.type == 'res_feed_forward':
+                classification_model_layers.append(
+                    nn.LayerNorm(self.embedding_dim)
+                )
+
+                for _ in range(classification_config.num_layers):
+                    classification_model_layers.append(
+                        ResFeedForwardBlock(
+                            in_channels = self.embedding_dim,
+                            hidden_channels = self.embedding_dim,
+                            activation = activation,
+                            bias = False
+                        )
+                    )
+
+                classification_model_layers.append(
+                    nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
+                )
+            elif classification_config.type == 'linear':
+                classification_model_layers.append(
+                    nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
+                )
+
+            self.classification_model = nn.Sequential(
+                *classification_model_layers
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
