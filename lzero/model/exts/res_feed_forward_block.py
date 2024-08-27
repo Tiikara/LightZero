@@ -18,7 +18,6 @@ class ResFeedForwardBlock(nn.Module):
             SummaryModule(
                 nn.Sequential(
                     nn.Linear(in_channels, hidden_channels, bias=bias),
-                    nn.LayerNorm(hidden_channels),
                     activation,
                     nn.Linear(hidden_channels, in_channels, bias=bias)
                 )
