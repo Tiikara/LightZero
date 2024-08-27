@@ -90,7 +90,7 @@ atari_unizero_config = dict(
                 head_type='linear_classification',
                 head=dict(
                     linear_classification=dict(
-                        type_classifier='2fc',
+                        type_classifier='res_feed_forward',
                         use_last_layer_norm=False,
                         classifier_num_layers=1,
                     ),

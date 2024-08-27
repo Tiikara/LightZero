@@ -536,6 +536,10 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                         )
                     )
             elif linear_classification_config.type_classifier == 'res_feed_forward':
+                classification_model_layers.append(
+                    nn.LayerNorm(self.embedding_dim)
+                )
+
                 for _ in range(linear_classification_config.classifier_num_layers):
                     classification_model_layers.append(
                         ResFeedForwardBlock(
