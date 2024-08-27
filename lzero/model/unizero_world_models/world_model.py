@@ -1219,7 +1219,6 @@ class WorldModel(nn.Module):
 
             # Entropy regularization - Class
             logits_reshaped_sm = F.softmax(logits_reshaped, dim=-1)
-            logits_reshaped_sm_log = F.log_softmax(logits_reshaped, dim=-1)
             class_loss_entropy = entropy_with_log(logits_reshaped_sm, logits_reshaped_sm_log) / np.log(self.group_size)
             class_loss_entropy = target_value_loss_quadratic(
                 value=class_loss_entropy,
