@@ -1170,7 +1170,7 @@ class WorldModel(nn.Module):
                 labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
 
             batch_size, num_features = logits_observations_class.shape
-            epsilon = 1e-6
+
             logits_reshaped = logits_observations_class.reshape(batch_size, self.num_groups, self.group_size)
             labels_reshaped = labels_observations_class.reshape(batch_size, self.num_groups, self.group_size)
 
