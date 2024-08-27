@@ -1195,7 +1195,7 @@ class WorldModel(nn.Module):
             # Prediction Error
             loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
 
-            loss_obs = loss_obs_class + 0.1 * loss_obs_pred + 0.1 * class_loss_entropy
+            loss_obs = loss_obs_pred + 0.01 * loss_obs_class + 0.01 * class_loss_entropy
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
