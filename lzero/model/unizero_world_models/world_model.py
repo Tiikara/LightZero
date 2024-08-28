@@ -13,6 +13,7 @@ from einops import rearrange
 
 from lzero.model.common import SimNorm
 from lzero.model.utils import cal_dormant_ratio
+from zoo.atari.config.atari_gumbel_muzero_config import batch_size
 from .slicer import Head
 from .tokenizer import Tokenizer
 from .transformer import Transformer, TransformerConfig
@@ -22,6 +23,7 @@ from lzero.model.exts.capsnet_layers import caps_dir_loss, caps_dir_loss_se
 from ..exts.funcs import log_gumbel_softmax
 from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic, log_cosh_loss, \
     smooth_quadratic_dead_zone_regularization, entropy, entropy_with_log
+from ..exts.losses.decorrelation import decorrelation_reg
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -1234,6 +1236,16 @@ class WorldModel(nn.Module):
             loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
 
             loss_obs = loss_obs_pred + 0.001 * loss_obs_class + 0.001 * class_loss_entropy
+        elif self.predict_latent_loss_type == 'log_cosh_decorrelation':
+            batch_size, num_features = logits_observations.shape
+
+            loss_obs_decorrelation = decorrelation_reg(logits_observations) + decorrelation_reg(rearrange(obs_embeddings, 'b t o -> (b t) o'))
+
+            loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
+
+            loss_obs_decorrelation_weight = 0.1
+
+            loss_obs = loss_obs_pred + loss_obs_decorrelation_weight * loss_obs_decorrelation
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
