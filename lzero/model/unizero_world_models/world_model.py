@@ -1198,7 +1198,7 @@ class WorldModel(nn.Module):
 
             loss_obs_pred_weight = 1.
             loss_obs_class_weight = 0.1
-            class_loss_entropy_weight = 0.01
+            class_loss_entropy_weight = 0.
 
             loss_obs = loss_obs_pred * loss_obs_pred_weight + loss_obs_class_weight * loss_obs_class + class_loss_entropy_weight * class_loss_entropy
         elif self.predict_latent_loss_type == 'vae_single_simnorm_class_entropy_log_cosh_sim':
