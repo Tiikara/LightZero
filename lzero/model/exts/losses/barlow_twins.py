@@ -29,10 +29,14 @@ class BarlowTwins(nn.Module):
         return self.barlow_twins_loss(x, x_z)
 
     def barlow_twins_loss(self, p1, p2):
-        p1 = (p1 - p1.mean(0)) / p1.std(0)
-        p2 = (p2 - p2.mean(0)) / p2.std(0)
+        p1 = (p1 - p1.mean(0)) / (p1.std(0) + 1e-6)
+        p2 = (p2 - p2.mean(0)) / (p2.std(0) + 1e-6)
+
         c = torch.mm(p1.T, p2) / p1.shape[0]
+
         on_diag = torch.diagonal(c).add_(-1).pow_(2).mean()
         off_diag = off_diagonal(c).pow_(2).mean()
+
         loss = on_diag + self.lambda_coeff * off_diag
+
         return loss
