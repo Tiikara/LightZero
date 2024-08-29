@@ -12,7 +12,7 @@ def off_diagonal(x):
     return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
 
 class BarlowTwinsLogCosh(nn.Module):
-    def __init__(self, encoder, lambda_coeff=0.01):
+    def __init__(self, lambda_coeff=0.01):
         super().__init__()
         self.lambda_coeff = lambda_coeff
 

@@ -24,6 +24,7 @@ from ..exts.funcs import log_gumbel_softmax
 from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic, log_cosh_loss, \
     smooth_quadratic_dead_zone_regularization, entropy, entropy_with_log
 from ..exts.losses.barlow_twins import BarlowTwins
+from ..exts.losses.barlow_twins_log_cosh import BarlowTwinsLogCosh
 from ..exts.losses.decorrelation import decorrelation_reg
 from ..tests.test_stochastic_muzero_model import encoder
 
@@ -1265,6 +1266,11 @@ class WorldModel(nn.Module):
             loss_obs = loss_obs_pred + loss_obs_bt_weight * loss_obs_bt
         elif self.predict_latent_loss_type == 'barlow_twins_real_pred':
             loss_obs = self.barlow_twins.barlow_twins_loss(labels_observations, logits_observations)
+        elif self.predict_latent_loss_type == 'barlow_twins_real_pred_log_cosh':
+            loss_obs_bt = BarlowTwinsLogCosh(lambda_coeff=0.0001).barlow_twins_loss(labels_observations, logits_observations)
+            loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
+
+            loss_obs = loss_obs_bt + loss_obs_pred
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
