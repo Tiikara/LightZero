@@ -100,7 +100,7 @@ class WorldModel(nn.Module):
         # Initialize keys and values for transformer
         self._initialize_transformer_keys_values()
 
-        self.barlow_twins = BarlowTwins(encoder=tokenizer.encoder, lambda_coeff=0.01)
+        self.barlow_twins = BarlowTwins(encoder=tokenizer.encoder, lambda_coeff=0.0001)
 
     def _initialize_config_parameters(self) -> None:
         """Initialize configuration parameters."""
@@ -1263,6 +1263,8 @@ class WorldModel(nn.Module):
             loss_obs_bt_weight = 0.1
 
             loss_obs = loss_obs_pred + loss_obs_bt_weight * loss_obs_bt
+        elif self.predict_latent_loss_type == 'barlow_twins_real_pred':
+            loss_obs = self.barlow_twins.barlow_twins_loss(labels_observations, logits_observations)
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
