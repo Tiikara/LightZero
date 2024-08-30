@@ -89,7 +89,7 @@ atari_unizero_config = dict(
                 num_capsules=128,
                 projection=dict(
                     type=None,
-                    num_layers=2
+                    num_layers=1
                 ),
                 head_type='linear',
                 head=dict(
