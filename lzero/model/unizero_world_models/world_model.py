@@ -1075,9 +1075,9 @@ class WorldModel(nn.Module):
             # for name, param in self.tokenizer.encoder.named_parameters():
             #     print('name, param.mean(), param.std():', name, param.mean(), param.std())
         elif self.predict_latent_loss_type == 'classification_encoder':
-            logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
+            logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
             with torch.no_grad():
-                labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
+                labels_observations_class = target_tokenizer.encoder.projection_model(labels_observations)
 
             batch_size, num_features = logits_observations_class.shape
             epsilon = 1e-6
@@ -1106,9 +1106,9 @@ class WorldModel(nn.Module):
             loss_obs = loss_obs_class + reg_loss_entropy_class * beta_entropy + reg_loss_entropy * beta_entropy
         elif self.predict_latent_loss_type == 'cat_vae_simnorm_class_entropy':
             # CLASS VAE
-            logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
+            logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
             with torch.no_grad():
-                labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
+                labels_observations_class = target_tokenizer.encoder.projection_model(labels_observations)
 
             batch_size, num_features = logits_observations_class.shape
             epsilon = 1e-6
@@ -1141,9 +1141,9 @@ class WorldModel(nn.Module):
             loss_obs = loss_obs_class + 0.1 * class_loss_entropy
         elif self.predict_latent_loss_type == 'cat_vae_single_simnorm_class_entropy':
             # CLASS VAE
-            logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
+            logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
             with torch.no_grad():
-                labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
+                labels_observations_class = target_tokenizer.encoder.projection_model(labels_observations)
 
             batch_size, num_features = logits_observations_class.shape
             epsilon = 1e-6
@@ -1172,9 +1172,9 @@ class WorldModel(nn.Module):
             loss_obs = loss_obs_class + 0.1 * class_loss_entropy
         elif self.predict_latent_loss_type == 'cat_vae_single_simnorm_class_entropy_log_cosh_sim':
             # CLASS VAE
-            logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
+            logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
             with torch.no_grad():
-                labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
+                labels_observations_class = target_tokenizer.encoder.projection_model(labels_observations)
 
             batch_size, num_features = logits_observations_class.shape
 
@@ -1210,9 +1210,9 @@ class WorldModel(nn.Module):
             loss_obs = loss_obs_pred * loss_obs_pred_weight + loss_obs_class_weight * loss_obs_class + class_loss_entropy_weight * class_loss_entropy
         elif self.predict_latent_loss_type == 'vae_single_simnorm_class_entropy_log_cosh_sim':
             # CLASS VAE
-            logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
+            logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
             with torch.no_grad():
-                labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
+                labels_observations_class = target_tokenizer.encoder.projection_model(labels_observations)
 
             batch_size, num_features = logits_observations_class.shape
 
@@ -1273,9 +1273,9 @@ class WorldModel(nn.Module):
             loss_obs = loss_obs_bt + loss_obs_pred
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
-            logits_observations_class = self.tokenizer.encoder.classification_model(logits_observations)
+            logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
             with torch.no_grad():
-                labels_observations_class = target_tokenizer.encoder.classification_model(labels_observations)
+                labels_observations_class = target_tokenizer.encoder.projection_model(labels_observations)
 
             batch_size, num_features = logits_observations_class.shape
 

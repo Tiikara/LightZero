@@ -65,7 +65,7 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             downsample_network_config=None,
             head_type: str = None,
             head_config=None,
-            classification_config=None
+            projection_config=None
     ) -> None:
         """
         Overview:
@@ -522,7 +522,7 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 lambda: SimNorm(simnorm_dim=group_size)
             ]
         elif head_type == 'linear_classification_2fc':
-            self.classification_model = nn.Sequential(
+            self.projection_model = nn.Sequential(
                 ResFCBlock(
                     in_channels = self.embedding_dim,
                     activation = activation,
@@ -559,12 +559,12 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
         else:
             raise 'Not Supported ' + head_type
 
-        if classification_config.type is not None:
-            classification_model_layers = []
+        if projection_config.type is not None:
+            projection_model_layers = []
 
-            if classification_config.type == '2fc':
-                for _ in range(classification_config.num_layers):
-                    classification_model_layers.append(
+            if projection_config.type == '2fc':
+                for _ in range(projection_config.num_layers):
+                    projection_model_layers.append(
                         ResFCBlock(
                             in_channels = self.embedding_dim,
                             activation = activation,
@@ -572,9 +572,9 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                             bias = False
                         )
                     )
-            elif classification_config.type == 'res_feed_forward':
-                for _ in range(classification_config.num_layers):
-                    classification_model_layers.append(
+            elif projection_config.type == 'res_feed_forward':
+                for _ in range(projection_config.num_layers):
+                    projection_model_layers.append(
                         ResFeedForwardBlock(
                             in_channels = self.embedding_dim,
                             hidden_channels = self.embedding_dim,
@@ -583,16 +583,16 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                         )
                     )
 
-                classification_model_layers.append(
+                projection_model_layers.append(
                     nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
                 )
-            elif classification_config.type == 'linear':
-                classification_model_layers.append(
+            elif projection_config.type == 'linear':
+                projection_model_layers.append(
                     nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
                 )
 
-            self.classification_model = nn.Sequential(
-                *classification_model_layers
+            self.projection_model = nn.Sequential(
+                *projection_model_layers
             )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

@@ -98,7 +98,7 @@ def build_representation_network_unizero(
             downsample_network_config=model_config.downsample_network,
             head_type=model_config.head_type,
             head_config=model_config.head,
-            classification_config=model_config.classification
+            projection_config=model_config.projection
         )
     elif model_config.type == 'base_res_downsample':
         return RepresentationNetworkUniZeroResDownsample(
