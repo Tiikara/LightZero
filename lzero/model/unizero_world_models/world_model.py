@@ -1276,7 +1276,11 @@ class WorldModel(nn.Module):
             with torch.no_grad():
                 labels_observations_proj = target_tokenizer.encoder.projection_model(labels_observations)
 
-            loss_obs_bt = BarlowTwinsLogCosh(lambda_coeff=0.0001).barlow_twins_loss(logits_observations_proj, labels_observations_proj)
+            loss_obs_bt = BarlowTwinsLogCosh(lambda_coeff=0.0001).barlow_twins_loss(
+                logits_observations_proj,
+                labels_observations_proj,
+                use_bn = False
+            )
             loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
 
             loss_obs = loss_obs_bt + loss_obs_pred

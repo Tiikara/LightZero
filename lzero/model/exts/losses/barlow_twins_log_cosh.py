@@ -16,9 +16,10 @@ class BarlowTwinsLogCosh(nn.Module):
         super().__init__()
         self.lambda_coeff = lambda_coeff
 
-    def barlow_twins_loss(self, p1, p2):
-        p1 = F.batch_norm(p1, running_mean=None, running_var=None, training=True)
-        p2 = F.batch_norm(p2, running_mean=None, running_var=None, training=True)
+    def barlow_twins_loss(self, p1, p2, use_bn=True):
+        if use_bn:
+            p1 = F.batch_norm(p1, running_mean=None, running_var=None, training=True)
+            p2 = F.batch_norm(p2, running_mean=None, running_var=None, training=True)
 
         c = torch.mm(p1.T, p2) / p1.shape[0]
 

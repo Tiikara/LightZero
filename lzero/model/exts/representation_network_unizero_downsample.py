@@ -591,6 +591,11 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                     nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
                 )
 
+            if projection_config.last_norm == 'BN':
+                projection_model_layers.append(
+                    nn.BatchNorm1d(self.embedding_dim)
+                )
+
             self.projection_model = nn.Sequential(
                 *projection_model_layers
             )
