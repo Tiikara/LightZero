@@ -1284,14 +1284,16 @@ class WorldModel(nn.Module):
             with torch.no_grad():
                 labels_observations_proj = target_tokenizer.encoder.projection_model(labels_observations)
 
-            loss_obs_bt = BarlowTwinsLogCosh(lambda_coeff=0.0001).barlow_twins_loss(
+            loss_obs_bt = BarlowTwinsLogCosh(lambda_coeff=0.1).barlow_twins_loss(
                 logits_observations_proj,
                 labels_observations_proj,
                 use_bn = False
             )
+            loss_obs_bt_weight = 1.
+
             loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
 
-            loss_obs = loss_obs_bt + loss_obs_pred
+            loss_obs = loss_obs_pred + loss_obs_bt_weight * loss_obs_bt
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)

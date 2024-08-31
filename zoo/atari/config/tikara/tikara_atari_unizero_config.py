@@ -90,7 +90,7 @@ atari_unizero_config = dict(
                 projection=dict(
                     type='res_feed_forward',
                     num_layers=1,
-                    last_norm=None
+                    last_norm='BN'
                 ),
                 head_type='linear',
                 head=dict(
@@ -124,7 +124,7 @@ atari_unizero_config = dict(
                 # latent_recon_loss_weight=0.1,
                 # perceptual_loss_weight=0.1,
                 # predict_latent_loss_type='mse'
-                predict_latent_loss_type='log_cosh_proj_uniform_rand',
+                predict_latent_loss_type='barlow_twins_proj_real_pred_log_cosh',
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
                 obs_loss_weight=10.  # 10. - UniZero
