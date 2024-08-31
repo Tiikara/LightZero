@@ -1295,26 +1295,18 @@ class WorldModel(nn.Module):
             loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
 
             loss_obs = loss_obs_pred + loss_obs_bt_weight * loss_obs_bt
-        elif self.predict_latent_loss_type == 'vic_reg_all_proj_real_pred_log_cosh':
+        elif self.predict_latent_loss_type == 'vic_reg_log_cosh':
             logits_observations_proj = self.tokenizer.encoder.projection_model(logits_observations)
             with torch.no_grad():
                 labels_observations_proj = target_tokenizer.encoder.projection_model(labels_observations)
 
             loss_obs_vic = VICRegSingleLoss(var_coeff = 1.0, cov_coeff = 0.04)(
                 logits_observations_proj
-            )
-
-            loss_obs_pred = log_cosh_loss(logits_observations_proj, labels_observations_proj).mean(dim=-1)
-
-            loss_obs = loss_obs_pred + loss_obs_vic
-        elif self.predict_latent_loss_type == 'vic_reg_real_pred_log_cosh':
-            loss_obs_vic = VICRegSingleLoss(var_coeff = 1.0, cov_coeff = 0.04)(
-                logits_observations
-            )
+            ) + F.mse_loss(logits_observations_proj, labels_observations_proj, reduction='none').mean(dim=-1)
 
             loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
 
-            loss_obs = loss_obs_pred + loss_obs_vic
+            loss_obs = loss_obs_pred + 0.001 * loss_obs_vic
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
