@@ -26,6 +26,7 @@ from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_
 from ..exts.losses.barlow_twins import BarlowTwins
 from ..exts.losses.barlow_twins_log_cosh import BarlowTwinsLogCosh
 from ..exts.losses.decorrelation import decorrelation_reg
+from ..exts.losses.vic_reg_loss import VICRegLoss, VICRegSingleLoss
 from ..tests.test_stochastic_muzero_model import encoder
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -1294,6 +1295,26 @@ class WorldModel(nn.Module):
             loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
 
             loss_obs = loss_obs_pred + loss_obs_bt_weight * loss_obs_bt
+        elif self.predict_latent_loss_type == 'vic_reg_all_proj_real_pred_log_cosh':
+            logits_observations_proj = self.tokenizer.encoder.projection_model(logits_observations)
+            with torch.no_grad():
+                labels_observations_proj = target_tokenizer.encoder.projection_model(labels_observations)
+
+            loss_obs_vic = VICRegSingleLoss(var_coeff = 1.0, cov_coeff = 0.04)(
+                logits_observations_proj
+            )
+
+            loss_obs_pred = log_cosh_loss(logits_observations_proj, labels_observations_proj).mean(dim=-1)
+
+            loss_obs = loss_obs_pred + loss_obs_vic
+        elif self.predict_latent_loss_type == 'vic_reg_real_pred_log_cosh':
+            loss_obs_vic = VICRegSingleLoss(var_coeff = 1.0, cov_coeff = 0.04)(
+                logits_observations
+            )
+
+            loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
+
+            loss_obs = loss_obs_pred + loss_obs_vic
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
