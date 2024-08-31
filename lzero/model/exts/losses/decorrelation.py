@@ -1,13 +1,11 @@
 import torch
 import torch.nn as nn
 
+from lzero.model.exts.losses import log_cosh_loss
+
 
 def decorrelation_reg(latent_representations: torch.Tensor):
-    batch_size, latent_dim = latent_representations.shape
-
-    centered_representations = latent_representations - latent_representations.mean(dim=0, keepdim=True)
-
-    cov_matrix = (centered_representations.T @ centered_representations) / (batch_size - 1)
+    cov_matrix = torch.cov(latent_representations.T)
 
     identity = torch.eye(latent_dim, device=latent_representations.device)
     independence_loss = ((cov_matrix - identity) ** 2).mean()
@@ -15,10 +13,10 @@ def decorrelation_reg(latent_representations: torch.Tensor):
     return independence_loss
 
 if __name__ == "__main__":
-    latent_dim = 768
-    batch_size = 64
+    latent_dim = 4
+    batch_size = 8
 
-    input_data = torch.randn(batch_size, latent_dim)
+    input_data = torch.zeros(batch_size, latent_dim)
 
     ind_loss = decorrelation_reg(input_data)
 
