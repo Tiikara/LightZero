@@ -1032,7 +1032,6 @@ class WorldModel(nn.Module):
                 labels_observations_proj = target_tokenizer.encoder.projection_model(labels_observations)
 
             logits_observations_proj = logits_observations_proj + torch.randn_like(logits_observations_proj)
-            labels_observations_proj = labels_observations_proj + torch.randn_like(labels_observations_proj)
 
             loss_obs = log_cosh_loss(logits_observations_proj, labels_observations_proj).mean(dim=-1)
         elif self.predict_latent_loss_type == 'log_cosh_entropy':
