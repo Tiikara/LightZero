@@ -1026,6 +1026,15 @@ class WorldModel(nn.Module):
             loss_obs = reg_loss_entropy * beta_entropy + loss_mse
         elif self.predict_latent_loss_type == 'log_cosh':
             loss_obs = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
+        elif self.predict_latent_loss_type == 'log_cosh_proj_uniform_rand':
+            logits_observations_proj = self.tokenizer.encoder.projection_model(logits_observations)
+            with torch.no_grad():
+                labels_observations_proj = target_tokenizer.encoder.projection_model(labels_observations)
+
+            logits_observations_proj = logits_observations_proj + torch.randn_like(logits_observations_proj)
+            labels_observations_proj = labels_observations_proj + torch.randn_like(labels_observations_proj)
+
+            loss_obs = log_cosh_loss(logits_observations_proj, labels_observations_proj).mean(dim=-1)
         elif self.predict_latent_loss_type == 'log_cosh_entropy':
             batch_size, num_features = logits_observations.shape
 
