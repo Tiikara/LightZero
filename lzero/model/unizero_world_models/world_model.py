@@ -1434,9 +1434,7 @@ class WorldModel(nn.Module):
                 labels_observations_proj
             )
 
-            loss_vic *= mask_padding_expanded.mean() # convert to mask scaling
-
-            loss_vic *= 0.01
+            loss_vic *= mask_padding_expanded.float().mean() # convert to mask scaling
         else:
             loss_vic = 0.
 

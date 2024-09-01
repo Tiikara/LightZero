@@ -156,6 +156,7 @@ class LossWithIntermediateLosses:
         self.ends_loss_weight = 0.
         self.value_loss_weight = value_loss_weight
         self.obs_loss_weight = obs_loss_weight
+        self.loss_vic_weight = 0.01
 
         self.latent_recon_loss_weight = latent_recon_loss_weight
         self.perceptual_loss_weight = perceptual_loss_weight
@@ -178,7 +179,7 @@ class LossWithIntermediateLosses:
             elif k == 'perceptual_loss':
                 self.loss_total += self.perceptual_loss_weight * v
             elif k == 'loss_vic':
-                self.loss_total += v
+                self.loss_total += self.loss_vic_weight * v
 
         self.intermediate_losses = {
             k: v if isinstance(v, dict) else (v if isinstance(v, float) else v.item())
