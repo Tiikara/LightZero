@@ -1429,9 +1429,12 @@ class WorldModel(nn.Module):
             with torch.no_grad():
                 labels_observations_proj = target_tokenizer.encoder.projection_model(valid_labels)
 
-            loss_vic = VICRegSingleLoss(var_coeff = 1.0, cov_coeff = 0.04)(
-                logits_observations_proj
-            ) + F.mse_loss(logits_observations_proj, labels_observations_proj, reduction='none').mean()
+            loss_vic = VICRegLoss(inv_coeff = 1.0, var_coeff = 1.0, cov_coeff = 0.04)(
+                logits_observations_proj,
+                labels_observations_proj
+            )
+
+            loss_vic *= mask_padding_expanded.mean() # convert to mask scaling
 
             loss_vic *= 0.01
         else:
