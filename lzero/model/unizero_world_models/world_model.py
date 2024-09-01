@@ -1296,17 +1296,7 @@ class WorldModel(nn.Module):
 
             loss_obs = loss_obs_pred + loss_obs_bt_weight * loss_obs_bt
         elif self.predict_latent_loss_type == 'vic_reg_log_cosh':
-            logits_observations_proj = self.tokenizer.encoder.projection_model(logits_observations)
-            with torch.no_grad():
-                labels_observations_proj = target_tokenizer.encoder.projection_model(labels_observations)
-
-            loss_obs_vic = VICRegSingleLoss(var_coeff = 1.0, cov_coeff = 0.04)(
-                logits_observations_proj
-            ) + F.mse_loss(logits_observations_proj, labels_observations_proj, reduction='none').mean(dim=-1)
-
-            loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
-
-            loss_obs = loss_obs_pred + 0.001 * loss_obs_vic
+            loss_obs = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
@@ -1431,6 +1421,22 @@ class WorldModel(nn.Module):
             last_step_mask = mask_padding[:, -1]
             last_step_losses[loss_name] = loss_tmp[:, -1][last_step_mask].mean()
 
+        if self.predict_latent_loss_type == 'vic_reg_log_cosh':
+            valid_logits = logits_observations[mask_padding_expanded]
+            valid_labels = labels_observations[mask_padding_expanded]
+
+            logits_observations_proj = self.tokenizer.encoder.projection_model(valid_logits)
+            with torch.no_grad():
+                labels_observations_proj = target_tokenizer.encoder.projection_model(valid_labels)
+
+            loss_vic = VICRegSingleLoss(var_coeff = 1.0, cov_coeff = 0.04)(
+                logits_observations_proj
+            ) + F.mse_loss(logits_observations_proj, labels_observations_proj, reduction='none').mean()
+
+            loss_vic *= 0.01
+        else:
+            loss_vic = 0.
+
         # Discount reconstruction loss and perceptual loss
         discounted_latent_recon_loss = latent_recon_loss
         discounted_perceptual_loss = perceptual_loss
@@ -1462,6 +1468,7 @@ class WorldModel(nn.Module):
             dormant_ratio_encoder=dormant_ratio_encoder,
             dormant_ratio_world_model=dormant_ratio_world_model,
             latent_state_l2_norms=latent_state_l2_norms,
+            loss_vic=loss_vic
         )
 
     def compute_cross_entropy_loss(self, outputs, labels, batch, element='rewards'):

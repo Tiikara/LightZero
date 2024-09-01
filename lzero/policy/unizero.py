@@ -515,6 +515,8 @@ class UniZeroPolicy(MuZeroPolicy):
             'analysis/l2_norm_after': self.l2_norm_after,
             'analysis/grad_norm_before': self.grad_norm_before,
             'analysis/grad_norm_after': self.grad_norm_after,
+
+            'loss_vic': self.intermediate_losses['loss_vic']
         }
 
         return return_loss_dict
@@ -892,6 +894,8 @@ class UniZeroPolicy(MuZeroPolicy):
             'collect_mcts_temperature',
             'cur_lr_world_model',
             'cur_lr_tokenizer',
+
+            'loss_vic', # VIC Reg
 
             'weighted_total_loss',
             'obs_loss',
