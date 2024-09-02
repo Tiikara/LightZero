@@ -111,6 +111,7 @@ class WorldModel(nn.Module):
         self.group_size = self.config.group_size
         self.num_groups = self.config.embed_dim // self.group_size
         self.caps_direction_loss_weight = self.config.caps_direction_loss_weight
+        self.reg_type = self.config.reg_type
         self.obs_loss_weight = self.config.obs_loss_weight
         self.value_loss_weight = self.config.value_loss_weight
         self.obs_type = self.config.obs_type
@@ -1295,8 +1296,6 @@ class WorldModel(nn.Module):
             loss_obs_pred = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
 
             loss_obs = loss_obs_pred + loss_obs_bt_weight * loss_obs_bt
-        elif self.predict_latent_loss_type == 'vic_reg_log_cosh':
-            loss_obs = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
         elif self.predict_latent_loss_type == 'simnorm_class_entropy':
             # CLASS VAE
             logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
@@ -1421,7 +1420,7 @@ class WorldModel(nn.Module):
             last_step_mask = mask_padding[:, -1]
             last_step_losses[loss_name] = loss_tmp[:, -1][last_step_mask].mean()
 
-        if self.predict_latent_loss_type == 'vic_reg_log_cosh':
+        if self.reg_type == 'vic':
             valid_logits = logits_observations[mask_padding_expanded]
             valid_labels = labels_observations[mask_padding_expanded]
 
