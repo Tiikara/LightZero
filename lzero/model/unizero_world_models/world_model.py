@@ -112,6 +112,7 @@ class WorldModel(nn.Module):
         self.num_groups = self.config.embed_dim // self.group_size
         self.caps_direction_loss_weight = self.config.caps_direction_loss_weight
         self.reg_type = self.config.reg_type
+        self.use_noisy_aug = self.config.use_noisy_aug
         self.obs_loss_weight = self.config.obs_loss_weight
         self.value_loss_weight = self.config.value_loss_weight
         self.obs_type = self.config.obs_type
@@ -871,7 +872,10 @@ class WorldModel(nn.Module):
 
     def compute_loss(self, batch, target_tokenizer: Tokenizer = None, inverse_scalar_transform_handle=None, **kwargs: Any) -> LossWithIntermediateLosses:
         # Encode observations into latent state representations
-        obs_embeddings = self.tokenizer.encode_to_obs_embeddings(batch['observations'])
+        if self.use_noisy_aug:
+            obs_embeddings = self.tokenizer.encode_to_obs_embeddings_with_noise(batch['observations'])
+        else:
+            obs_embeddings = self.tokenizer.encode_to_obs_embeddings(batch['observations'])
 
         # ========= for visual analysis =========
         # Uncomment the lines below for visual analysis in Pong
@@ -1439,6 +1443,16 @@ class WorldModel(nn.Module):
         # Discount reconstruction loss and perceptual loss
         discounted_latent_recon_loss = latent_recon_loss
         discounted_perceptual_loss = perceptual_loss
+
+        #if self.use_noisy_aug:
+        #    std_devs = rearrange(obs_embeddings, 'b t o -> (b t) o')[:, 0]
+
+        #    noise_scale = 1.0 - std_devs
+
+        #    loss_obs *= noise_scale
+        #    loss_rewards *= noise_scale
+        #    loss_value *= noise_scale
+        #    loss_policy *= noise_scale
 
         # Calculate overall discounted loss
         discounted_loss_obs = (loss_obs.view(-1, batch['actions'].shape[1] - 1) * discounts[1:]).mean()

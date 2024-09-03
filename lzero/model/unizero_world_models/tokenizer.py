@@ -86,6 +86,32 @@ class Tokenizer(nn.Module):
 
         return obs_embeddings
 
+    def encode_to_obs_embeddings_with_noise(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Encode observations to embeddings.
+
+        Arguments:
+            x (torch.Tensor): Input tensor of shape (B, ...).
+
+        Returns:
+            torch.Tensor: Encoded embeddings of shape (B, 1, E).
+        """
+        shape = x.shape
+        # Process input tensor based on its dimensionality
+        if len(shape) == 4:
+            # Case when input is 4D (B, C, H, W)
+            obs_embeddings = self.encoder.forward_noised(x)
+            obs_embeddings = rearrange(obs_embeddings, 'b e -> b 1 e')
+        elif len(shape) == 5:
+            # Case when input is 5D (B, T, C, H, W)
+            x = x.contiguous().view(-1, *shape[-3:])  # Flatten the first two dimensions (B * T, C, H, W)
+            obs_embeddings = self.encoder.forward_noised(x)
+            obs_embeddings = rearrange(obs_embeddings, 'b e -> b 1 e')
+        else:
+            raise ValueError(f"Invalid input shape: {shape}")
+
+        return obs_embeddings
+
     def decode_to_obs(self, embeddings: torch.Tensor) -> torch.Tensor:
         """Decode embeddings to observations.
 

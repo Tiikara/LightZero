@@ -7,6 +7,7 @@ from easydict import EasyDict
 
 from .common import MZNetworkOutput, RepresentationNetworkUniZero, RepresentationNetworkMLP, LatentDecoder, \
     VectorDecoderForMemoryEnv, LatentEncoderForMemoryEnv, LatentDecoderForMemoryEnv, FeatureAndGradientHook
+from .exts.noise_processor_repr_network_wrapper import NoiseProcessorReprNetworkWrapper
 from .unizero_world_models.tokenizer import Tokenizer
 from .unizero_world_models.world_model import WorldModel
 from .exts.build_representation_network_unizero import build_representation_network_unizero
@@ -112,6 +113,9 @@ class UniZeroModel(nn.Module):
                     embedding_dim=world_model_cfg.embed_dim,
                     group_size=world_model_cfg.group_size,
                 )
+
+            if world_model_cfg.use_noisy_aug:
+                self.representation_network = NoiseProcessorReprNetworkWrapper(encoder=self.representation_network)
 
             # TODO: we should change the output_shape to the real observation shape
             if world_model_cfg.latent_recon_loss_weight != 0. or world_model_cfg.perceptual_loss_weight != 0.:

@@ -88,7 +88,7 @@ atari_unizero_config = dict(
                 ),
                 num_capsules=128,
                 projection=dict(
-                    type='res_feed_forward',
+                    type=False, # res_feed_forward
                     num_layers=1,
                     last_norm=None
                 ),
@@ -125,7 +125,8 @@ atari_unizero_config = dict(
                 # perceptual_loss_weight=0.1,
                 # predict_latent_loss_type='mse'
                 predict_latent_loss_type='log_cosh',
-                reg_type='vic',
+                reg_type=False, # vic |
+                use_noisy_aug=True,
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
                 obs_loss_weight=10.  # 10. - UniZero
