@@ -10,7 +10,7 @@ action_space_size = atari_env_action_space_map[env_id]
 # begin of the most frequently changed config specified by the user
 # ==============================================================
 update_per_collect = None
-replay_ratio = 0.75 # 0.25 - UniZero
+replay_ratio = 0.25 # 0.25 - UniZero
 collector_env_num = 8
 n_episode = 8
 evaluator_env_num = 3
@@ -155,6 +155,7 @@ atari_unizero_config = dict(
         collector_env_num=collector_env_num,
         evaluator_env_num=evaluator_env_num,
         grad_clip_value=20., # UniZero - 5
+        model_update_ratio= 0.75 # UniZero - 0.25
     ),
 )
 atari_unizero_config = EasyDict(atari_unizero_config)
