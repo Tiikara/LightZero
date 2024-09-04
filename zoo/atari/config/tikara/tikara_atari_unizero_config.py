@@ -10,7 +10,7 @@ action_space_size = atari_env_action_space_map[env_id]
 # begin of the most frequently changed config specified by the user
 # ==============================================================
 update_per_collect = None
-replay_ratio = 0.25 # 0.25 - UniZero
+replay_ratio = 0.75 # 0.25 - UniZero
 collector_env_num = 8
 n_episode = 8
 evaluator_env_num = 3
