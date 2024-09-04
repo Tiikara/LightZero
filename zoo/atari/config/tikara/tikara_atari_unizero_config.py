@@ -88,7 +88,7 @@ atari_unizero_config = dict(
                 ),
                 num_capsules=128,
                 projection=dict(
-                    type=False, # res_feed_forward
+                    type='res_feed_forward', # res_feed_forward |
                     num_layers=1,
                     last_norm=None
                 ),
@@ -125,8 +125,8 @@ atari_unizero_config = dict(
                 # perceptual_loss_weight=0.1,
                 # predict_latent_loss_type='mse'
                 predict_latent_loss_type='log_cosh',
-                reg_type=False, # vic |
-                use_noisy_aug=True,
+                reg_type='vic', # vic |
+                use_noisy_aug=False,
                 max_noise_aug=0.25,
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
@@ -155,7 +155,7 @@ atari_unizero_config = dict(
         collector_env_num=collector_env_num,
         evaluator_env_num=evaluator_env_num,
         grad_clip_value=20., # UniZero - 5
-        model_update_ratio= 0.75 # UniZero - 0.25
+        # model_update_ratio= 0.75 # UniZero - 0.25
     ),
 )
 atari_unizero_config = EasyDict(atari_unizero_config)
