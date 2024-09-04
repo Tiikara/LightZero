@@ -115,7 +115,10 @@ class UniZeroModel(nn.Module):
                 )
 
             if world_model_cfg.use_noisy_aug:
-                self.representation_network = NoiseProcessorReprNetworkWrapper(encoder=self.representation_network)
+                self.representation_network = NoiseProcessorReprNetworkWrapper(
+                    encoder=self.representation_network,
+                    max_noise=world_model_cfg.max_noise_aug
+                )
 
             # TODO: we should change the output_shape to the real observation shape
             if world_model_cfg.latent_recon_loss_weight != 0. or world_model_cfg.perceptual_loss_weight != 0.:

@@ -23,13 +23,15 @@ def apply_gaussian_noise(tensor, std_devs, min_val=0., max_val=1.):
 class NoiseProcessorReprNetworkWrapper(nn.Module):
     def __init__(
             self,
-            encoder
+            encoder: nn.Module,
+            max_noise: float = 0.25
     ) -> None:
         super().__init__()
 
         self.encoder = encoder
 
         self.out_create_layers = encoder.out_create_layers
+        self.max_noise = max_noise
 
     def forward_noised(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -37,7 +39,7 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
         """
         assert len(x.shape) == 4
 
-        std_devs = torch.rand(x.size(0), device=x.device) * 0.25
+        std_devs = torch.rand(x.size(0), device=x.device) * self.max_noise
 
         x_noised = apply_gaussian_noise(x, std_devs)
 

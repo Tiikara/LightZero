@@ -1444,16 +1444,6 @@ class WorldModel(nn.Module):
         discounted_latent_recon_loss = latent_recon_loss
         discounted_perceptual_loss = perceptual_loss
 
-        #if self.use_noisy_aug:
-        #    std_devs = rearrange(obs_embeddings, 'b t o -> (b t) o')[:, 0]
-
-        #    noise_scale = 1.0 - std_devs
-
-        #    loss_obs *= noise_scale
-        #    loss_rewards *= noise_scale
-        #    loss_value *= noise_scale
-        #    loss_policy *= noise_scale
-
         # Calculate overall discounted loss
         discounted_loss_obs = (loss_obs.view(-1, batch['actions'].shape[1] - 1) * discounts[1:]).mean()
         discounted_loss_rewards = (loss_rewards.view(-1, batch['actions'].shape[1]) * discounts).mean()

@@ -10,7 +10,7 @@ action_space_size = atari_env_action_space_map[env_id]
 # begin of the most frequently changed config specified by the user
 # ==============================================================
 update_per_collect = None
-replay_ratio = 0.25
+replay_ratio = 0.25 # 0.25 - UniZero
 collector_env_num = 8
 n_episode = 8
 evaluator_env_num = 3
@@ -127,6 +127,7 @@ atari_unizero_config = dict(
                 predict_latent_loss_type='log_cosh',
                 reg_type=False, # vic |
                 use_noisy_aug=True,
+                max_noise_aug=0.25,
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
                 obs_loss_weight=10.  # 10. - UniZero
