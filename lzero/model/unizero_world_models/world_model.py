@@ -83,8 +83,7 @@ class WorldModel(nn.Module):
         self.head_observations = self._create_head(
             self.all_but_last_latent_state_pattern,
             self.obs_per_embdding_dim,
-            obs_add_layers,
-            set_aug_noise_emb_zero=self.use_noisy_aug
+            obs_add_layers
         )  # NOTE: we add a sim_norm to the head for observations
         self.head_policy = self._create_head(self.value_policy_tokens_pattern, self.action_space_size)
         self.head_value = self._create_head(self.value_policy_tokens_pattern, self.support_size)
@@ -145,7 +144,7 @@ class WorldModel(nn.Module):
         self.value_policy_tokens_pattern = torch.zeros(self.config.tokens_per_block)
         self.value_policy_tokens_pattern[-2] = 1
 
-    def _create_head(self, block_mask: torch.Tensor, output_dim: int, add_layers=None, set_aug_noise_emb_zero=False) -> Head:
+    def _create_head(self, block_mask: torch.Tensor, output_dim: int, add_layers=None) -> Head:
         """Create head modules for the transformer."""
         modules = [
             nn.Linear(self.config.embed_dim, self.config.embed_dim),
@@ -155,15 +154,6 @@ class WorldModel(nn.Module):
         if add_layers:
             for add_layer in add_layers:
                 modules.append(add_layer())
-
-        if set_aug_noise_emb_zero:
-            modules.append(
-                SecondDimCheck(
-                    SetFirstDimToZeroModule(
-                        output_dim,
-                    )
-                )
-            )
 
         return Head(
             max_blocks=self.config.max_blocks,

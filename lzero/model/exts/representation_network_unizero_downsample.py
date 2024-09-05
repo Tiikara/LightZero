@@ -24,6 +24,7 @@ from collections import OrderedDict
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, PrimaryCapsForward1D
 from .multiply_module import MultiplyModule
+from .remove_first_dim_module import RemoveFirstDimModule
 from .res_fc_block import ResFCBlock
 from .res_feed_forward_block import ResFeedForwardBlock
 from .second_dim_check import SecondDimCheck
@@ -49,7 +50,7 @@ from .spatial_softmax import SpatialSoftmax
 from .spatial_softmax_positional import SpatialSoftmaxPositional
 from .torch_encodings import Summer, PositionalEncodingPermute2D
 from .vae_net import VAENet
-
+from .add_dim_to_start_module import AddDimToStartModule
 
 class RepresentationNetworkUniZeroDownsample(nn.Module):
 
@@ -571,6 +572,25 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
             self.out_create_layers = [
                 lambda: nn.LayerNorm(self.embedding_dim)
+            ]
+        elif head_type == 'linear_norm_except_one':
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim - 1,
+                    bias=False
+                ),
+                nn.LayerNorm(self.embedding_dim - 1),
+                AddDimToStartModule(0)
+            )
+
+            self.out_create_layers = [
+                lambda: RemoveFirstDimModule(),
+                lambda: nn.LayerNorm(self.embedding_dim - 1),
+                lambda: AddDimToStartModule(0)
             ]
         else:
             raise 'Not Supported ' + head_type

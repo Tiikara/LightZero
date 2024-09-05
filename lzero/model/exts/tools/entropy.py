@@ -1,12 +1,13 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
 from lzero.model.exts.losses import entropy_softmax, entropy, entropy_linear, norm_l1, log_cosh_loss
 
 logits_observations = torch.tensor([
-    [0., 0., 0.],
-    [0., 0., 0.11],
+    [0., 0.5, 0.11],
+    [0., 0.5, 0.11],
     [1., 10., -1.0],
     [1., 10., 1.],
     [14., 16., 12.],
@@ -33,3 +34,6 @@ print(np.log(3))
 
 print(torch.cosh(torch.tensor([-3566]) + eps))
 print(log_cosh_loss(torch.tensor([-3566]), torch.tensor([0])))
+
+
+print(nn.LayerNorm(3)(logits_observations[:,:]))
