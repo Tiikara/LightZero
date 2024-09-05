@@ -156,7 +156,7 @@ class LossWithIntermediateLosses:
         self.ends_loss_weight = 0.
         self.value_loss_weight = value_loss_weight
         self.obs_loss_weight = obs_loss_weight
-        self.loss_vic_weight = 1.
+        self.loss_vic_weight = 10.
 
         self.latent_recon_loss_weight = latent_recon_loss_weight
         self.perceptual_loss_weight = perceptual_loss_weight

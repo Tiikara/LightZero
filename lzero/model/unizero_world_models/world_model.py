@@ -1434,7 +1434,7 @@ class WorldModel(nn.Module):
 
             loss_vic = VICRegSingleLoss(var_coeff = 1.0, cov_coeff = 0.04)(
                 logits_observations_proj
-            ) + 0.01 * F.mse_loss(logits_observations_proj, labels_observations_proj)
+            ) + 0.001 * F.mse_loss(logits_observations_proj, labels_observations_proj)
 
             loss_vic *= mask_padding_expanded.float().mean() # convert to mask scaling
         else:

@@ -3,7 +3,7 @@ import time
 from zoo.atari.config.atari_env_action_space_map import atari_env_action_space_map
 import torch
 
-env_id = 'DemonAttackNoFrameskip-v4'  # You can specify any Atari game here
+env_id = 'PongNoFrameskip-v4'  # You can specify any Atari game here
 action_space_size = atari_env_action_space_map[env_id]
 
 # ==============================================================
@@ -63,8 +63,8 @@ atari_unizero_config = dict(
         # TODO: only for debug
         # collect_max_episode_steps=int(50),
         # eval_max_episode_steps=int(50),
-        collect_max_episode_steps=3000, # demon attack: changed
-        eval_max_episode_steps=3000, # demon attack: changed
+        # collect_max_episode_steps=3000, # demon attack: changed
+        # eval_max_episode_steps=3000, # demon attack: changed
     ),
     policy=dict(
         model=dict(
@@ -88,7 +88,7 @@ atari_unizero_config = dict(
                 ),
                 num_capsules=128,
                 projection=dict(
-                    type='res_feed_forward', # res_feed_forward |
+                    type=False, # res_feed_forward |
                     num_layers=1,
                     last_norm=None
                 ),
@@ -125,8 +125,8 @@ atari_unizero_config = dict(
                 # perceptual_loss_weight=0.1,
                 # predict_latent_loss_type='mse'
                 predict_latent_loss_type='log_cosh',
-                reg_type=False, # vic |
-                use_noisy_aug=True,
+                reg_type='vic', # vic |
+                use_noisy_aug=False,
                 max_noise_aug=0.25,
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
