@@ -556,6 +556,22 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             )
 
             self.out_create_layers = []
+        elif head_type == 'linear_norm':
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim,
+                    bias=False
+                ),
+                nn.LayerNorm(self.embedding_dim)
+            )
+
+            self.out_create_layers = [
+                lambda: nn.LayerNorm(self.embedding_dim)
+            ]
         else:
             raise 'Not Supported ' + head_type
 

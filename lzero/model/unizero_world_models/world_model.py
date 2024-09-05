@@ -27,6 +27,8 @@ from ..exts.losses.barlow_twins import BarlowTwins
 from ..exts.losses.barlow_twins_log_cosh import BarlowTwinsLogCosh
 from ..exts.losses.decorrelation import decorrelation_reg
 from ..exts.losses.vic_reg_loss import VICRegLoss, VICRegSingleLoss
+from ..exts.second_dim_check import SecondDimCheck
+from ..exts.set_first_dim_to_zero_module import SetFirstDimToZeroModule
 from ..tests.test_stochastic_muzero_model import encoder
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -81,7 +83,8 @@ class WorldModel(nn.Module):
         self.head_observations = self._create_head(
             self.all_but_last_latent_state_pattern,
             self.obs_per_embdding_dim,
-            obs_add_layers
+            obs_add_layers,
+            set_aug_noise_emb_zero=self.use_noisy_aug
         )  # NOTE: we add a sim_norm to the head for observations
         self.head_policy = self._create_head(self.value_policy_tokens_pattern, self.action_space_size)
         self.head_value = self._create_head(self.value_policy_tokens_pattern, self.support_size)
@@ -142,7 +145,7 @@ class WorldModel(nn.Module):
         self.value_policy_tokens_pattern = torch.zeros(self.config.tokens_per_block)
         self.value_policy_tokens_pattern[-2] = 1
 
-    def _create_head(self, block_mask: torch.Tensor, output_dim: int, add_layers=None) -> Head:
+    def _create_head(self, block_mask: torch.Tensor, output_dim: int, add_layers=None, set_aug_noise_emb_zero=False) -> Head:
         """Create head modules for the transformer."""
         modules = [
             nn.Linear(self.config.embed_dim, self.config.embed_dim),
@@ -152,6 +155,16 @@ class WorldModel(nn.Module):
         if add_layers:
             for add_layer in add_layers:
                 modules.append(add_layer())
+
+        if set_aug_noise_emb_zero:
+            modules.append(
+                SecondDimCheck(
+                    SetFirstDimToZeroModule(
+                        output_dim,
+                    )
+                )
+            )
+
         return Head(
             max_blocks=self.config.max_blocks,
             block_mask=block_mask,
