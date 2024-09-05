@@ -88,7 +88,7 @@ atari_unizero_config = dict(
                 ),
                 num_capsules=128,
                 projection=dict(
-                    type=False, # res_feed_forward |
+                    type='res_feed_forward', # res_feed_forward |
                     num_layers=1,
                     last_norm=None
                 ),
