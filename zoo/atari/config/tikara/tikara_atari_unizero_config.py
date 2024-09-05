@@ -88,7 +88,7 @@ atari_unizero_config = dict(
                 ),
                 num_capsules=128,
                 projection=dict(
-                    type='res_feed_forward', # res_feed_forward |
+                    type=False, # res_feed_forward |
                     num_layers=1,
                     last_norm=None
                 ),
@@ -154,7 +154,7 @@ atari_unizero_config = dict(
         replay_buffer_size=int(1e6),
         collector_env_num=collector_env_num,
         evaluator_env_num=evaluator_env_num,
-        grad_clip_value=20., # UniZero - 5
+        # grad_clip_value=20., # UniZero - 5
         # model_update_ratio= 0.75 # UniZero - 0.25
     ),
 )
