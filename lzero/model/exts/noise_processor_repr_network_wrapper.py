@@ -16,9 +16,9 @@ def apply_gaussian_noise(tensor, std_devs, min_val=0., max_val=1.):
 
     noisy_tensor = tensor + noise * std_devs
 
-    # clipped_tensor = torch.clamp(noisy_tensor, min_val, max_val)
+    clipped_tensor = torch.clamp(noisy_tensor, min_val, max_val)
 
-    return noisy_tensor
+    return clipped_tensor
 
 class NoiseProcessorReprNetworkWrapper(nn.Module):
     def __init__(
@@ -35,7 +35,7 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
 
     def forward_noised(self, x: torch.Tensor) -> torch.Tensor:
         """
-        :param tensor: [batch_size, C, H, W]
+        :param x: [batch_size, C, H, W]
         """
         assert len(x.shape) == 4
 
