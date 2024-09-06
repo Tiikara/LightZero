@@ -16,9 +16,9 @@ def apply_gaussian_noise(tensor, std_devs, min_val=0., max_val=1.):
 
     noisy_tensor = tensor + noise * std_devs
 
-    clipped_tensor = torch.clamp(noisy_tensor, min_val, max_val)
+    # clipped_tensor = torch.clamp(noisy_tensor, min_val, max_val)
 
-    return clipped_tensor
+    return noisy_tensor
 
 class NoiseProcessorReprNetworkWrapper(nn.Module):
     def __init__(
@@ -39,13 +39,15 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
         """
         assert len(x.shape) == 4
 
-        std_devs = torch.rand(x.size(0), device=x.device) * self.max_noise
+        noise_strength = torch.rand(x.size(0), device=x.device)
+
+        std_devs = noise_strength * self.max_noise
 
         x_noised = apply_gaussian_noise(x, std_devs)
 
         x_encoded = self.encoder(x_noised)
 
-        x_encoded[:, 0] = std_devs
+        x_encoded[:, 0] = noise_strength
 
         return x_encoded
 
