@@ -11,7 +11,7 @@ def build_feed_forward_by_type(type: str, in_features: int, hidden_features: int
             nn.Linear(hidden_features, out_features),
         )
     elif type == 'swiglu':
-        assert (hidden_features * 2) % 3 == 0 # keep number of parameters same
+        assert (hidden_features * 2) % 3 == 0 # keep number of parameters are same
 
         hidden_features = (hidden_features * 2) // 3
 
