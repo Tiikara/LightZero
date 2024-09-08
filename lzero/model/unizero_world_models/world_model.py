@@ -20,6 +20,7 @@ from .transformer import Transformer, TransformerConfig
 from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcache
 from .utils import WorldModelOutput, quantize_state
 from lzero.model.exts.capsnet_layers import caps_dir_loss, caps_dir_loss_se
+from ..exts.feed_forwards.build_feed_forward_by_type import build_feed_forward_by_type
 from ..exts.funcs import log_gumbel_softmax
 from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic, log_cosh_loss, \
     smooth_quadratic_dead_zone_regularization, entropy, entropy_with_log
@@ -79,14 +80,27 @@ class WorldModel(nn.Module):
 
 
         # Head modules
-        self.head_rewards = self._create_head(self.act_tokens_pattern, self.support_size)
+        self.head_rewards = self._create_head(
+            self.act_tokens_pattern,
+            self.support_size,
+            config=config,
+        )
         self.head_observations = self._create_head(
             self.all_but_last_latent_state_pattern,
             self.obs_per_embdding_dim,
-            obs_add_layers
+            config=config,
+            add_layers=obs_add_layers
         )  # NOTE: we add a sim_norm to the head for observations
-        self.head_policy = self._create_head(self.value_policy_tokens_pattern, self.action_space_size)
-        self.head_value = self._create_head(self.value_policy_tokens_pattern, self.support_size)
+        self.head_policy = self._create_head(
+            self.value_policy_tokens_pattern,
+            self.action_space_size,
+            config=config,
+        )
+        self.head_value = self._create_head(
+            self.value_policy_tokens_pattern,
+            self.support_size,
+            config=config,
+        )
 
         # Apply weight initialization, the order is important
         self.apply(lambda module: init_weights(module, norm_type=self.config.transformer_norm_type))
@@ -144,12 +158,15 @@ class WorldModel(nn.Module):
         self.value_policy_tokens_pattern = torch.zeros(self.config.tokens_per_block)
         self.value_policy_tokens_pattern[-2] = 1
 
-    def _create_head(self, block_mask: torch.Tensor, output_dim: int, add_layers=None) -> Head:
+    def _create_head(self, block_mask: torch.Tensor, output_dim: int, config: TransformerConfig, add_layers=None) -> Head:
         """Create head modules for the transformer."""
         modules = [
-            nn.Linear(self.config.embed_dim, self.config.embed_dim),
-            nn.GELU(approximate='tanh'),
-            nn.Linear(self.config.embed_dim, output_dim)
+            build_feed_forward_by_type(
+                type=config.transformer_feed_forward_type,
+                in_features=self.config.embed_dim,
+                hidden_features=self.config.embed_dim,
+                out_features=output_dim
+            )
         ]
         if add_layers:
             for add_layer in add_layers:
