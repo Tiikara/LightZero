@@ -89,7 +89,7 @@ class WorldModel(nn.Module):
         self.head_value = self._create_head(self.value_policy_tokens_pattern, self.support_size)
 
         # Apply weight initialization, the order is important
-        self.apply(lambda module: init_weights(module, norm_type=self.config.norm_type))
+        self.apply(lambda module: init_weights(module, norm_type=self.config.transformer_norm_type))
         self._initialize_last_layer()
 
         # Cache structures
@@ -1035,6 +1035,8 @@ class WorldModel(nn.Module):
             loss_obs = reg_loss_entropy * beta_entropy + loss_mse
         elif self.predict_latent_loss_type == 'log_cosh':
             loss_obs = log_cosh_loss(logits_observations, labels_observations).mean(dim=-1)
+        elif self.predict_latent_loss_type == 'log_cosh_except_one':
+            loss_obs = log_cosh_loss(logits_observations[:, 1:], labels_observations[:, 1:]).mean(dim=-1)
         elif self.predict_latent_loss_type == 'log_cosh_proj_uniform_rand':
             logits_observations_proj = self.tokenizer.encoder.projection_model(logits_observations)
             with torch.no_grad():

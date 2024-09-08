@@ -24,7 +24,8 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
     def __init__(
             self,
             encoder: nn.Module,
-            max_noise: float = 0.25
+            max_noise: float = 0.25,
+            noise_proba: float = 0.5
     ) -> None:
         super().__init__()
 
@@ -32,6 +33,7 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
 
         self.out_create_layers = encoder.out_create_layers
         self.max_noise = max_noise
+        self.noise_proba = noise_proba
 
     def forward_noised(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -39,7 +41,9 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
         """
         assert len(x.shape) == 4
 
-        noise_strength = torch.rand(x.size(0), device=x.device)
+        use_noise_mask = (torch.rand(x.size(0), device=x.device) < self.noise_proba).float()
+
+        noise_strength = use_noise_mask * torch.rand(x.size(0), device=x.device)
 
         std_devs = noise_strength * self.max_noise
 

@@ -12,7 +12,10 @@ from ding.torch_utils.network import GRUGatingUnit
 from einops import rearrange
 from torch.nn import functional as F
 
+from zoo.atari.config.atari_muzero_context_config import norm_type
+from zoo.atari.tests.test_atari_lightzero_env import config
 from .kv_caching import KeysValues
+from ..exts.norms.build_norm_by_type import build_norm_by_type
 
 
 @dataclass
@@ -28,6 +31,8 @@ class TransformerConfig:
     embed_pdrop: float
     resid_pdrop: float
     attn_pdrop: float
+
+    transformer_norm_type: str
 
     @property
     def max_tokens(self):
@@ -53,7 +58,7 @@ class Transformer(nn.Module):
         self.config = config
         self.drop = nn.Dropout(config.embed_pdrop)
         self.blocks = nn.ModuleList([Block(config) for _ in range(config.num_layers)])
-        self.ln_f = nn.LayerNorm(config.embed_dim)
+        self.ln_f = build_norm_by_type(type=config.transformer_norm_type, in_features=config.embed_dim)
 
     def generate_empty_keys_values(self, n: int, max_tokens: int) -> KeysValues:
         """
@@ -118,8 +123,8 @@ class Block(nn.Module):
             self.gate1 = GRUGatingUnit(config.embed_dim, self.gru_bias)
             self.gate2 = GRUGatingUnit(config.embed_dim, self.gru_bias)
 
-        self.ln1 = nn.LayerNorm(config.embed_dim)
-        self.ln2 = nn.LayerNorm(config.embed_dim)
+        self.ln1 = build_norm_by_type(type=config.transformer_norm_type, in_features=config.embed_dim)
+        self.ln2 = build_norm_by_type(type=config.transformer_norm_type, in_features=config.embed_dim)
         self.attn = SelfAttention(config)
         self.mlp = nn.Sequential(
             nn.Linear(config.embed_dim, 4 * config.embed_dim),
