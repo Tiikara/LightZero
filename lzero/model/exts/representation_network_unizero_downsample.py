@@ -24,6 +24,7 @@ from collections import OrderedDict
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, PrimaryCapsForward1D
 from .multiply_module import MultiplyModule
+from .norms.rms_norm import RMSNorm
 from .remove_first_dim_module import RemoveFirstDimModule
 from .res_fc_block import ResFCBlock
 from .res_feed_forward_block import ResFeedForwardBlock
@@ -590,6 +591,25 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             self.out_create_layers = [
                 lambda: RemoveFirstDimModule(),
                 lambda: nn.LayerNorm(self.embedding_dim - 1),
+                lambda: AddDimToStartModule(0)
+            ]
+        elif head_type == 'linear_rms_norm_except_one':
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim - 1,
+                    bias=False
+                ),
+                RMSNorm(self.embedding_dim - 1),
+                AddDimToStartModule(0)
+            )
+
+            self.out_create_layers = [
+                lambda: RemoveFirstDimModule(),
+                lambda: RMSNorm(self.embedding_dim - 1),
                 lambda: AddDimToStartModule(0)
             ]
         else:
