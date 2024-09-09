@@ -1,9 +1,11 @@
+from typing import List
+
 import torch.nn as nn
 
 from lzero.model.exts.activations.swiglu import SwiGLU
 
 
-def build_feed_forward_layers_by_type(type: str, in_features: int, hidden_features: int, out_features: int) -> list[nn.Module]:
+def build_feed_forward_layers_by_type(type: str, in_features: int, hidden_features: int, out_features: int) -> List[nn.Module]:
     if type == 'base':
         return [
             nn.Linear(in_features, hidden_features),
