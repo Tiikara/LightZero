@@ -15,7 +15,7 @@ from torch.nn import functional as F
 from zoo.atari.config.atari_muzero_context_config import norm_type
 from zoo.atari.tests.test_atari_lightzero_env import config
 from .kv_caching import KeysValues
-from ..exts.feed_forwards.build_feed_forward_by_type import build_feed_forward_by_type
+from ..exts.feed_forwards.build_feed_forward_by_type import build_feed_forward_layers_by_type
 from ..exts.norms.build_norm_by_type import build_norm_by_type
 
 
@@ -129,7 +129,7 @@ class Block(nn.Module):
         self.ln2 = build_norm_by_type(type=config.transformer_norm_type, in_features=config.embed_dim)
         self.attn = SelfAttention(config)
         self.mlp = nn.Sequential(
-            build_feed_forward_by_type(
+            *build_feed_forward_layers_by_type(
                 type=config.transformer_feed_forward_type,
                 in_features=config.embed_dim,
                 hidden_features=4 * config.embed_dim,

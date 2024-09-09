@@ -20,7 +20,7 @@ from .transformer import Transformer, TransformerConfig
 from .utils import LossWithIntermediateLosses, init_weights, to_device_for_kvcache
 from .utils import WorldModelOutput, quantize_state
 from lzero.model.exts.capsnet_layers import caps_dir_loss, caps_dir_loss_se
-from ..exts.feed_forwards.build_feed_forward_by_type import build_feed_forward_by_type
+from ..exts.feed_forwards.build_feed_forward_by_type import build_feed_forward_layers_by_type
 from ..exts.funcs import log_gumbel_softmax
 from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_loss_quadratic, log_cosh_loss, \
     smooth_quadratic_dead_zone_regularization, entropy, entropy_with_log
@@ -161,7 +161,7 @@ class WorldModel(nn.Module):
     def _create_head(self, block_mask: torch.Tensor, output_dim: int, config: TransformerConfig, add_layers=None) -> Head:
         """Create head modules for the transformer."""
         modules = [
-            build_feed_forward_by_type(
+            *build_feed_forward_layers_by_type(
                 type=config.transformer_feed_forward_type,
                 in_features=self.config.embed_dim,
                 hidden_features=self.config.embed_dim,
