@@ -92,7 +92,7 @@ atari_unizero_config = dict(
                     num_layers=1,
                     last_norm=None
                 ),
-                head_type='linear_rms_norm_except_one',
+                head_type='linear_norm_except_one',
                 head=dict(
                     linear=dict(
                         use_coords=False
@@ -130,7 +130,7 @@ atari_unizero_config = dict(
                 reg_type=False, # vic |
                 use_noisy_aug=True,
                 max_noise_aug=0.25,
-                noise_proba=0.75,
+                noise_proba=0.5,
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
                 obs_loss_weight=10.  # 10. - UniZero
