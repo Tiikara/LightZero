@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 
-def apply_gaussian_noise(tensor, std_devs, min_val=0., max_val=1.):
+def apply_gaussian_noise(tensor, std_devs):
     """
     :param tensor: [batch_size, C, H, W]
     :param std_devs: [batch_size]
@@ -14,11 +14,26 @@ def apply_gaussian_noise(tensor, std_devs, min_val=0., max_val=1.):
 
     std_devs = std_devs.view(-1, 1, 1, 1)
 
-    noisy_tensor = tensor + noise * std_devs
+    return tensor + noise * std_devs
 
-    clipped_tensor = torch.clamp(noisy_tensor, min_val, max_val)
 
-    return clipped_tensor
+def apply_gaussian_noise_with_norm(tensor, std_devs):
+    """
+    :param tensor: [batch_size, C, H, W]
+    :param std_devs: [batch_size]
+    :return: noised tensor
+    """
+    mean = tensor.mean(dim=[1, 2, 3], keepdim=True)
+    std = tensor.std(dim=[1, 2, 3], keepdim=True)
+
+    x_noised = apply_gaussian_noise(tensor, std_devs)
+
+    mean_noise = x_noised.mean(dim=[1, 2, 3], keepdim=True)
+    std_noise = x_noised.std(dim=[1, 2, 3], keepdim=True)
+    x_normalized = (x_noised - mean_noise) / (std_noise + 0.001)
+
+    return x_normalized * std + mean
+
 
 class NoiseProcessorReprNetworkWrapper(nn.Module):
     def __init__(
@@ -48,6 +63,8 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
         std_devs = noise_strength * self.max_noise
 
         x_noised = apply_gaussian_noise(x, std_devs)
+
+        x_noised = torch.clamp(x_noised, 0., 1.)
 
         x_encoded = self.encoder(x_noised)
 
