@@ -589,9 +589,38 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             )
 
             self.out_create_layers = [
-                lambda: RemoveFirstDimModule(),
-                lambda: nn.LayerNorm(self.embedding_dim - 1),
-                lambda: AddDimToStartModule(0)
+                lambda: SecondDimCheck(
+                    nn.Sequential(
+                        RemoveFirstDimModule(),
+                        nn.LayerNorm(self.embedding_dim - 1),
+                        AddDimToStartModule(0)
+                    )
+                )
+            ]
+        elif head_type == 'linear_norm_gelu_except_one':
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim - 1,
+                    bias=False
+                ),
+                nn.LayerNorm(self.embedding_dim - 1),
+                nn.GELU(approximate='tanh'),
+                AddDimToStartModule(0)
+            )
+
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    nn.Sequential(
+                        RemoveFirstDimModule(),
+                        nn.LayerNorm(self.embedding_dim - 1),
+                        nn.GELU(approximate='tanh'),
+                        AddDimToStartModule(0)
+                    )
+                )
             ]
         elif head_type == 'linear_rms_norm_except_one':
             self.head = nn.Sequential(
@@ -608,9 +637,13 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             )
 
             self.out_create_layers = [
-                lambda: RemoveFirstDimModule(),
-                lambda: RMSNorm(self.embedding_dim - 1),
-                lambda: AddDimToStartModule(0)
+                lambda: SecondDimCheck(
+                    nn.Sequential(
+                        RemoveFirstDimModule(),
+                        RMSNorm(self.embedding_dim - 1),
+                        AddDimToStartModule(0)
+                    )
+                )
             ]
         else:
             raise 'Not Supported ' + head_type
