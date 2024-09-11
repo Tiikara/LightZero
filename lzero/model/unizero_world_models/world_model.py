@@ -129,6 +129,7 @@ class WorldModel(nn.Module):
         self.caps_direction_loss_weight = self.config.caps_direction_loss_weight
         self.reg_type = self.config.reg_type
         self.use_noisy_aug = self.config.use_noisy_aug
+        self.use_variational_latent_noisy_aug = self.config.use_variational_latent_noisy_aug
         self.obs_loss_weight = self.config.obs_loss_weight
         self.value_loss_weight = self.config.value_loss_weight
         self.obs_type = self.config.obs_type
@@ -892,7 +893,7 @@ class WorldModel(nn.Module):
 
     def compute_loss(self, batch, target_tokenizer: Tokenizer = None, inverse_scalar_transform_handle=None, **kwargs: Any) -> LossWithIntermediateLosses:
         # Encode observations into latent state representations
-        if self.use_noisy_aug:
+        if self.use_noisy_aug or self.use_variational_latent_noisy_aug:
             obs_embeddings = self.tokenizer.encode_to_obs_embeddings_with_noise(batch['observations'])
         else:
             obs_embeddings = self.tokenizer.encode_to_obs_embeddings(batch['observations'])

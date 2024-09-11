@@ -8,6 +8,7 @@ from easydict import EasyDict
 from .common import MZNetworkOutput, RepresentationNetworkUniZero, RepresentationNetworkMLP, LatentDecoder, \
     VectorDecoderForMemoryEnv, LatentEncoderForMemoryEnv, LatentDecoderForMemoryEnv, FeatureAndGradientHook
 from .exts.noise_processor_repr_network_wrapper import NoiseProcessorReprNetworkWrapper
+from .exts.variational_latent_noise_wrapper import VariationalLatentNoiseNetworkWrapper
 from .unizero_world_models.tokenizer import Tokenizer
 from .unizero_world_models.world_model import WorldModel
 from .exts.build_representation_network_unizero import build_representation_network_unizero
@@ -116,6 +117,12 @@ class UniZeroModel(nn.Module):
 
             if world_model_cfg.use_noisy_aug:
                 self.representation_network = NoiseProcessorReprNetworkWrapper(
+                    encoder=self.representation_network,
+                    max_noise=world_model_cfg.max_noise_aug,
+                    noise_proba=world_model_cfg.noise_proba
+                )
+            elif world_model_cfg.use_variational_latent_noisy_aug:
+                self.representation_network = VariationalLatentNoiseNetworkWrapper(
                     encoder=self.representation_network,
                     max_noise=world_model_cfg.max_noise_aug,
                     noise_proba=world_model_cfg.noise_proba
