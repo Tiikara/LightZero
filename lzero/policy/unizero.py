@@ -516,7 +516,8 @@ class UniZeroPolicy(MuZeroPolicy):
             'analysis/grad_norm_before': self.grad_norm_before,
             'analysis/grad_norm_after': self.grad_norm_after,
 
-            'loss_vic': self.intermediate_losses['loss_vic']
+            'loss_vic': self.intermediate_losses['loss_vic'],
+            'latent_enc_entropy': self.intermediate_losses['latent_enc_entropy']
         }
 
         return return_loss_dict
@@ -896,6 +897,7 @@ class UniZeroPolicy(MuZeroPolicy):
             'cur_lr_tokenizer',
 
             'loss_vic', # VIC Reg
+            'latent_enc_entropy',
 
             'weighted_total_loss',
             'obs_loss',

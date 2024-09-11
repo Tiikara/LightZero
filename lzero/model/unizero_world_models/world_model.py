@@ -27,6 +27,7 @@ from ..exts.losses import entropy_softmax, target_value_loss_relu, target_value_
 from ..exts.losses.barlow_twins import BarlowTwins
 from ..exts.losses.barlow_twins_log_cosh import BarlowTwinsLogCosh
 from ..exts.losses.decorrelation import decorrelation_reg
+from ..exts.losses.hist_entropy import hist_entropy_soft
 from ..exts.losses.vic_reg_loss import VICRegLoss, VICRegSingleLoss
 from ..exts.second_dim_check import SecondDimCheck
 from ..exts.set_first_dim_to_zero_module import SetFirstDimToZeroModule
@@ -1463,6 +1464,8 @@ class WorldModel(nn.Module):
         else:
             loss_vic = 0.
 
+        latent_enc_entropy = hist_entropy_soft(obs_embeddings.view(-1, self.embed_dim))
+
         # Discount reconstruction loss and perceptual loss
         discounted_latent_recon_loss = latent_recon_loss
         discounted_perceptual_loss = perceptual_loss
@@ -1494,7 +1497,8 @@ class WorldModel(nn.Module):
             dormant_ratio_encoder=dormant_ratio_encoder,
             dormant_ratio_world_model=dormant_ratio_world_model,
             latent_state_l2_norms=latent_state_l2_norms,
-            loss_vic=loss_vic
+            loss_vic=loss_vic,
+            latent_enc_entropy=latent_enc_entropy
         )
 
     def compute_cross_entropy_loss(self, outputs, labels, batch, element='rewards'):
