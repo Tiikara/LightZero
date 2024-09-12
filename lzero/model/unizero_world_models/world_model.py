@@ -133,6 +133,7 @@ class WorldModel(nn.Module):
         self.use_variational_latent_noisy_aug = self.config.use_variational_latent_noisy_aug
         self.obs_loss_weight = self.config.obs_loss_weight
         self.value_loss_weight = self.config.value_loss_weight
+        self.latent_enc_entropy_loss_weight = self.config.latent_enc_entropy_loss_weight
         self.obs_type = self.config.obs_type
         self.embed_dim = self.config.embed_dim
         self.num_heads = self.config.num_heads
@@ -1498,7 +1499,8 @@ class WorldModel(nn.Module):
             dormant_ratio_world_model=dormant_ratio_world_model,
             latent_state_l2_norms=latent_state_l2_norms,
             loss_vic=loss_vic,
-            latent_enc_entropy=latent_enc_entropy
+            latent_enc_entropy=latent_enc_entropy,
+            latent_enc_entropy_loss_weight=self.latent_enc_entropy_loss_weight
         )
 
     def compute_cross_entropy_loss(self, outputs, labels, batch, element='rewards'):

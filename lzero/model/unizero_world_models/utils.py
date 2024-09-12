@@ -142,7 +142,12 @@ class LossWithIntermediateLosses:
     Returns:
         - None
     """
-    def __init__(self, latent_recon_loss_weight=0, perceptual_loss_weight=0, value_loss_weight=0.25, obs_loss_weight=10., **kwargs):
+    def __init__(self, latent_recon_loss_weight=0,
+                 latent_enc_entropy_loss_weight=0.,
+                 perceptual_loss_weight=0,
+                 value_loss_weight=0.25,
+                 obs_loss_weight=10.,
+                 **kwargs):
         # Ensure that kwargs is not empty
         if not kwargs:
             raise ValueError("At least one loss must be provided")
@@ -156,7 +161,8 @@ class LossWithIntermediateLosses:
         self.ends_loss_weight = 0.
         self.value_loss_weight = value_loss_weight
         self.obs_loss_weight = obs_loss_weight
-        self.loss_vic_weight = 10.
+        self.loss_vic_weight = 2.
+        self.latent_enc_entropy_loss_weight = latent_enc_entropy_loss_weight
 
         self.latent_recon_loss_weight = latent_recon_loss_weight
         self.perceptual_loss_weight = perceptual_loss_weight
@@ -180,6 +186,8 @@ class LossWithIntermediateLosses:
                 self.loss_total += self.perceptual_loss_weight * v
             elif k == 'loss_vic':
                 self.loss_total += self.loss_vic_weight * v
+            elif k == 'latent_enc_entropy' and self.latent_enc_entropy_loss_weight is not None:
+                self.loss_total += -self.latent_enc_entropy_loss_weight * v
 
         self.intermediate_losses = {
             k: v if isinstance(v, dict) else (v if isinstance(v, float) else v.item())

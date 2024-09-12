@@ -47,6 +47,7 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
         self.encoder = encoder
 
         self.out_create_layers = encoder.out_create_layers
+        self.projection_model = encoder.projection_model
         self.max_noise = max_noise
         self.noise_proba = noise_proba
 

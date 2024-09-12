@@ -92,7 +92,7 @@ atari_unizero_config = dict(
                     num_layers=1,
                     last_norm=None
                 ),
-                head_type='linear_norm_gelu_except_one',
+                head_type='linear_norm_except_one',
                 head=dict(
                     linear=dict(
                         use_coords=False
@@ -130,6 +130,7 @@ atari_unizero_config = dict(
                 reg_type=False, # vic |
                 use_noisy_aug=True,
                 use_variational_latent_noisy_aug=False,
+                latent_enc_entropy_loss_weight=0.5,
                 max_noise_aug=0.25,
                 noise_proba=0.75,
                 caps_direction_loss_weight=2.,
@@ -181,7 +182,7 @@ create_config = atari_unizero_create_config
 
 if __name__ == "__main__":
     # Define a list of seeds for multiple runs
-    seeds = [int(time.time())]  # You can add more seed values here
+    seeds = [1726102429]  # You can add more seed values here
     for seed in seeds:
         # Update exp_name to include the current seed
         main_config.exp_name = f'data_unizero/{env_id[:-14]}_stack1_unizero_upc{update_per_collect}-rr{replay_ratio}_H{num_unroll_steps}_bs{batch_size}_seed{seed}'

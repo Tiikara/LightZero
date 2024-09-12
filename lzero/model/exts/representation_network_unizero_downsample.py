@@ -688,6 +688,8 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
             self.projection_model = nn.Sequential(
                 *projection_model_layers
             )
+        else:
+            self.projection_model = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
