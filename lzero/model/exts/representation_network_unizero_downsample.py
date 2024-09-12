@@ -1,5 +1,6 @@
 import math
 from dataclasses import dataclass
+from tokenize import group
 from typing import Optional, Tuple
 
 import numpy as np
@@ -25,7 +26,7 @@ from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, PrimaryCapsForward1D
 from .multiply_module import MultiplyModule
 from .norms.rms_norm import RMSNorm
-from .remove_first_dim_module import RemoveFirstDimModule
+from .remove_first_dim_module import RemoveFirstDimModule, RemoveFirstDimsModule
 from .res_fc_block import ResFCBlock
 from .res_feed_forward_block import ResFeedForwardBlock
 from .second_dim_check import SecondDimCheck
@@ -51,7 +52,8 @@ from .spatial_softmax import SpatialSoftmax
 from .spatial_softmax_positional import SpatialSoftmaxPositional
 from .torch_encodings import Summer, PositionalEncodingPermute2D
 from .vae_net import VAENet
-from .add_dim_to_start_module import AddDimToStartModule
+from .add_dim_to_start_module import AddDimToStartModule, AddDimsToStartModule
+
 
 class RepresentationNetworkUniZeroDownsample(nn.Module):
 
@@ -415,6 +417,29 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
 
             self.out_create_layers = [
                 lambda: SimNorm(simnorm_dim=group_size)
+            ]
+        elif head_type == 'simnorm_except_one':
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim - group_size,
+                    bias=False
+                ),
+                SimNorm(simnorm_dim=group_size),
+                AddDimsToStartModule(dims=group_size, value=0)
+            )
+
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    nn.Sequential(
+                        RemoveFirstDimsModule(number_dims=group_size),
+                        SimNorm(simnorm_dim=group_size),
+                        AddDimsToStartModule(dims=group_size, value=0)
+                    )
+                )
             ]
         elif head_type == 'simnorm_positional_multiply':
             self.head = nn.Sequential(

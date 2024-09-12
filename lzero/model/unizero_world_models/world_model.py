@@ -1113,6 +1113,21 @@ class WorldModel(nn.Module):
             # assert not torch.isinf(loss_obs).any(), "loss_obs contains Inf values"
             # for name, param in self.tokenizer.encoder.named_parameters():
             #     print('name, param.mean(), param.std():', name, param.mean(), param.std())
+        elif self.predict_latent_loss_type == 'group_kl_except_one':
+            # Group KL loss, group features and calculate KL divergence within each group
+            batch_size, num_features = logits_observations.shape
+            epsilon = 1e-6
+            logits_reshaped = logits_observations[:, self.group_size:].reshape(batch_size, self.num_groups - 1, self.group_size) + epsilon
+            labels_reshaped = labels_observations[:, self.group_size:].reshape(batch_size, self.num_groups - 1, self.group_size) + epsilon
+
+            loss_obs = F.kl_div(logits_reshaped.log(), labels_reshaped, reduction='none').sum(dim=-1).mean(dim=-1)
+
+            #  ========== for debugging ==========
+            # print('loss_obs:', loss_obs.mean())
+            # assert not torch.isnan(loss_obs).any(), "loss_obs contains NaN values"
+            # assert not torch.isinf(loss_obs).any(), "loss_obs contains Inf values"
+            # for name, param in self.tokenizer.encoder.named_parameters():
+            #     print('name, param.mean(), param.std():', name, param.mean(), param.std())
         elif self.predict_latent_loss_type == 'classification_encoder':
             logits_observations_class = self.tokenizer.encoder.projection_model(logits_observations)
             with torch.no_grad():
