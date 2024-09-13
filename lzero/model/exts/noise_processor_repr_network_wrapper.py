@@ -165,3 +165,45 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
         x_encoded[:, 0] = 0.
 
         return x_encoded
+
+if __name__ == "__main__":
+    from easydict import EasyDict
+
+    noise = NoiseProcessorReprNetworkWrapper(
+        encoder=nn.Identity(),
+        config=EasyDict(
+            dict(
+                noise_strength_config=dict(
+                    type='sample',
+                    random=dict(
+                        noise_proba=0.95,
+                        random_distribution_config=dict(
+                            type='max',
+                            power=dict(
+                                power=2.
+                            )
+                        )
+                    ),
+                    sample=dict(
+                        noise_samples_perc=0.95,
+                        random_distribution_config=dict(
+                            type='max',
+                            power=dict(
+                                power=2.
+                            )
+                        )
+                    )
+                ),
+                noise_scheduler=dict(
+                    initial_noise = 0.25,
+                    final_noise = 0.01,
+                    schedule_length = 500,
+                    decay_type = 'cos_cycle'
+                )
+            )
+        )
+    )
+
+    for step in range(300):
+        noise.forward_noised(torch.rand(650, 4, 4, 4))
+
