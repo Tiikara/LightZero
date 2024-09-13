@@ -131,7 +131,7 @@ atari_unizero_config = dict(
                 use_noisy_aug=True,
                 noise_config=dict(
                     noise_strength_config=dict(
-                        type='random',
+                        type='sample',
                         random=dict(
                             noise_proba=0.95,
                             random_distribution_config=dict(
@@ -142,9 +142,9 @@ atari_unizero_config = dict(
                             )
                         ),
                         sample=dict(
-                            noise_samples_perc=0.75,
+                            noise_samples_perc=0.95,
                             random_distribution_config=dict(
-                                type='linear',
+                                type='max',
                                 power=dict(
                                     power=2.
                                 )
