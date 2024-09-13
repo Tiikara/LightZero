@@ -1,6 +1,47 @@
+from dataclasses import dataclass
+
 import torch
 from torch import nn
 
+from lzero.model.exts.noise_scheduler import NoiseScheduler
+
+
+@dataclass
+class NoiseRandomDistributionPowerConfig:
+    power: float
+
+@dataclass
+class NoiseRandomDistributionConfig:
+    type: str
+    power: NoiseRandomDistributionPowerConfig
+
+@dataclass
+class NoiseStrengthRandomConfig:
+    noise_proba: float
+    random_distribution_config: NoiseRandomDistributionConfig
+
+@dataclass
+class NoiseStrengthSampleConfig:
+    noise_samples_perc: float
+    random_distribution_config: NoiseRandomDistributionConfig
+
+@dataclass
+class NoiseStrengthConfig:
+    type: str
+    random: NoiseStrengthRandomConfig
+    sample: NoiseStrengthSampleConfig
+
+@dataclass
+class NoiseSchedulerConfig:
+    initial_noise: float
+    final_noise: float
+    schedule_length: int
+    decay_type: str
+
+@dataclass
+class NoiseConfig:
+    noise_strength_config: NoiseStrengthConfig
+    noise_scheduler: NoiseSchedulerConfig
 
 def apply_gaussian_noise(tensor, std_devs):
     """
@@ -39,8 +80,7 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
     def __init__(
             self,
             encoder: nn.Module,
-            max_noise: float = 0.25,
-            noise_proba: float = 0.5
+            config: NoiseConfig,
     ) -> None:
         super().__init__()
 
@@ -48,8 +88,53 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
 
         self.out_create_layers = encoder.out_create_layers
         self.projection_model = encoder.projection_model
-        self.max_noise = max_noise
-        self.noise_proba = noise_proba
+        self.config = config
+
+        noise_scheduler_config = config.noise_scheduler
+        self.noise_scheduler = NoiseScheduler(
+            initial_noise = noise_scheduler_config.initial_noise,
+            final_noise = noise_scheduler_config.final_noise,
+            schedule_length = noise_scheduler_config.schedule_length,
+            decay_type = noise_scheduler_config.decay_type
+        )
+
+    def get_random_distribution(self, x, config: NoiseRandomDistributionConfig) -> torch.Tensor:
+        if config.type == 'linear':
+            return torch.rand(x.size(0), device=x.device)
+        if config.type == 'max':
+            return torch.ones(x.size(0), dtype=torch.float, device=x.device)
+        elif config.type == 'power':
+            config = config.power
+
+            return 1. - (torch.rand(x.size(0), device=x.device) ** config.power)
+        else:
+            raise Exception('Not supported ' + config.type)
+
+    def get_noise_strength(self, x, config: NoiseStrengthConfig) -> torch.Tensor:
+        if config.type == 'random':
+            config = config.random
+
+            use_noise_mask = (torch.rand(x.size(0), device=x.device) < config.noise_proba).float()
+            noise_strength = use_noise_mask * self.get_random_distribution(x, config.random_distribution_config)
+        elif config.type == 'max':
+            noise_strength = torch.ones(x.size(0), dtype=torch.float, device=x.device)
+        elif config.type == 'sample':
+            config = config.sample
+
+            batch_size = x.size(0)
+            num_noised = int(batch_size * config.noise_samples_perc)
+
+            # Create a mask with a fixed number of True values
+            noise_mask = torch.zeros(batch_size, dtype=torch.bool, device=x.device)
+            noise_mask[:num_noised] = True
+
+            # Shuffle the mask to randomize which images are noised
+            noise_mask = noise_mask[torch.randperm(batch_size)]
+            noise_strength = noise_mask * self.get_random_distribution(x, config.random_distribution_config)
+        else:
+            raise Exception('Not supported ' + config.type)
+
+        return noise_strength
 
     def forward_noised(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -57,11 +142,12 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
         """
         assert len(x.shape) == 4
 
-        use_noise_mask = (torch.rand(x.size(0), device=x.device) < self.noise_proba).float()
+        noise_strength = self.get_noise_strength(
+            x,
+            config=self.config.noise_strength_config
+        )
 
-        noise_strength = use_noise_mask * torch.rand(x.size(0), device=x.device)
-
-        std_devs = noise_strength * self.max_noise
+        std_devs = noise_strength * self.noise_scheduler.step()
 
         x_noised = apply_gaussian_noise(x, std_devs)
 
@@ -69,7 +155,7 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
 
         x_encoded = self.encoder(x_noised)
 
-        x_encoded[:, 0] = noise_strength
+        x_encoded[:, 0] = std_devs / (torch.max(self.noise_scheduler.initial_noise, self.noise_scheduler.final_noise))
 
         return x_encoded
 

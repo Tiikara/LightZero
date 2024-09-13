@@ -118,14 +118,7 @@ class UniZeroModel(nn.Module):
             if world_model_cfg.use_noisy_aug:
                 self.representation_network = NoiseProcessorReprNetworkWrapper(
                     encoder=self.representation_network,
-                    max_noise=world_model_cfg.max_noise_aug,
-                    noise_proba=world_model_cfg.noise_proba
-                )
-            elif world_model_cfg.use_variational_latent_noisy_aug:
-                self.representation_network = VariationalLatentNoiseNetworkWrapper(
-                    encoder=self.representation_network,
-                    max_noise=world_model_cfg.max_noise_aug,
-                    noise_proba=world_model_cfg.noise_proba
+                    config=world_model_cfg.noise_config
                 )
 
             # TODO: we should change the output_shape to the real observation shape
