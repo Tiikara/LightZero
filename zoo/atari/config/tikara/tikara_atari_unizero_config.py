@@ -152,9 +152,9 @@ atari_unizero_config = dict(
                         )
                     ),
                     noise_scheduler=dict(
-                        initial_noise = 0.25,
-                        final_noise = 0.01,
-                        schedule_length = 500,
+                        initial_noise = 0.125,
+                        final_noise = 0.,
+                        schedule_length = 1000,
                         decay_type = 'cos_cycle'
                     )
                 ),
@@ -208,6 +208,7 @@ create_config = atari_unizero_create_config
 
 if __name__ == "__main__":
     # Define a list of seeds for multiple runs
+    # int(time.time())
     seeds = [1726102429]  # You can add more seed values here
     for seed in seeds:
         # Update exp_name to include the current seed

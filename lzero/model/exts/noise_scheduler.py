@@ -53,7 +53,7 @@ if __name__ == "__main__":
     device = torch.device("cpu")
     scheduler = NoiseScheduler(
         initial_noise=0.25,
-        final_noise=0.01,
+        final_noise=0.,
         schedule_length=100,
         decay_type='cos_cycle',
         device=device
