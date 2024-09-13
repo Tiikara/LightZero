@@ -92,7 +92,7 @@ atari_unizero_config = dict(
                     num_layers=1,
                     last_norm=None
                 ),
-                head_type='simnorm_except_one',
+                head_type='linear_norm_except_one',
                 head=dict(
                     linear=dict(
                         use_coords=False
@@ -126,7 +126,7 @@ atari_unizero_config = dict(
                 # latent_recon_loss_weight=0.1,
                 # perceptual_loss_weight=0.1,
                 # predict_latent_loss_type='mse'
-                predict_latent_loss_type='group_kl_except_one',
+                predict_latent_loss_type='log_cosh_except_one',
                 reg_type=False, # vic |
                 use_noisy_aug=True,
                 use_variational_latent_noisy_aug=False,
@@ -135,7 +135,7 @@ atari_unizero_config = dict(
                 noise_proba=0.75,
                 caps_direction_loss_weight=2.,
                 value_loss_weight=0.25,  # 0.25 - UniZero
-                obs_loss_weight=10.  # 10. - UniZero
+                obs_loss_weight=30.  # 10. - UniZero
             ),
         ),
         learn=dict(
