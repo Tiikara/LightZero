@@ -153,7 +153,7 @@ atari_unizero_config = dict(
                         )
                     ),
                     noise_scheduler=dict(
-                        initial_noise = 0.125,
+                        initial_noise = 0.25,
                         final_noise = 0.,
                         schedule_length = 1000,
                         decay_type = 'cos_cycle'
