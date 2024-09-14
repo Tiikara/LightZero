@@ -130,6 +130,7 @@ atari_unizero_config = dict(
                 reg_type=False, # vic |
                 use_noisy_aug=True,
                 noise_config=dict(
+                    use_norm=False,
                     noise_strength_config=dict(
                         type='sample',
                         random=dict(

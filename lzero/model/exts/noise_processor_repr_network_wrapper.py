@@ -40,6 +40,7 @@ class NoiseSchedulerConfig:
 
 @dataclass
 class NoiseConfig:
+    use_norm: bool
     noise_strength_config: NoiseStrengthConfig
     noise_scheduler: NoiseSchedulerConfig
 
@@ -149,7 +150,10 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
 
         std_devs = noise_strength * self.noise_scheduler.step()
 
-        x_noised = apply_gaussian_noise(x, std_devs)
+        if self.config.use_norm:
+            x_noised = apply_gaussian_noise_with_norm(x, std_devs)
+        else:
+            x_noised = apply_gaussian_noise(x, std_devs)
 
         x_noised = torch.clamp(x_noised, 0., 1.)
 
