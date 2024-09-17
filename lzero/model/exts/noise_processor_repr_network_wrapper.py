@@ -147,13 +147,14 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
             # Create a mask with a fixed number of True values
             noise_mask = torch.zeros(batch_size, dtype=torch.bool, device=x.device)
             noise_mask = noise_mask.view(-1, config.seq_length)
+
+            assert noise_mask.size(0) == 64 # debug
+
             num_noised = int(noise_mask.size(0) * config.noise_samples_perc)
             noise_mask[:num_noised, :] = True
 
             # Shuffle the mask to randomize which batch are noised
             noise_mask = noise_mask[torch.randperm(noise_mask.size(0)), :].view(batch_size)
-
-            print(noise_mask)
 
             noise_strength = noise_mask * self.get_random_distribution(x, config.random_distribution_config)
         else:
