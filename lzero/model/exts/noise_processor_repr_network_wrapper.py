@@ -11,32 +11,29 @@ class NoiseRandomDistributionPowerConfig:
     power: float
 
 @dataclass
-class NoiseRandomDistributionConfig:
-    type: str
-    power: NoiseRandomDistributionPowerConfig
-
-@dataclass
-class NoiseStrengthRandomConfig:
+class NoiseRandomDistributionSelectRandConfig:
     noise_proba: float
-    random_distribution_config: NoiseRandomDistributionConfig
 
 @dataclass
-class NoiseStrengthSampleConfig:
+class NoiseRandomDistributionSampleConfig:
     noise_samples_perc: float
-    random_distribution_config: NoiseRandomDistributionConfig
 
 @dataclass
-class NoiseStrengthSampleSeqConfig:
+class NoiseRandomDistributionSampleSeqConfig:
     seq_length: int
     noise_samples_perc: float
-    random_distribution_config: NoiseRandomDistributionConfig
+
+@dataclass
+class NoiseRandomDistributionConfig:
+    type: str
+    sample_seq: NoiseRandomDistributionSampleSeqConfig
+    sample: NoiseRandomDistributionSampleConfig
+    select_rand: NoiseRandomDistributionSelectRandConfig
+    rand_power: NoiseRandomDistributionPowerConfig
 
 @dataclass
 class NoiseStrengthConfig:
-    type: str
-    random: NoiseStrengthRandomConfig
-    sample: NoiseStrengthSampleConfig
-    sample_seq: NoiseStrengthSampleSeqConfig
+    mult_random_distributions: list[NoiseRandomDistributionConfig]
 
 @dataclass
 class NoiseSchedulerConfig:
@@ -107,25 +104,18 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
         )
 
     def get_random_distribution(self, x, config: NoiseRandomDistributionConfig) -> torch.Tensor:
-        if config.type == 'linear':
+        if config.type == 'rand_linear':
             return torch.rand(x.size(0), device=x.device)
+        elif config.type == 'select_rand':
+            config = config.select_rand
+
+            return (torch.rand(x.size(0), device=x.device) < config.noise_proba).float()
         if config.type == 'max':
             return torch.ones(x.size(0), dtype=torch.float, device=x.device)
-        elif config.type == 'power':
-            config = config.power
+        elif config.type == 'rand_power':
+            config = config.rand_power
 
             return 1. - (torch.rand(x.size(0), device=x.device) ** config.power)
-        else:
-            raise Exception('Not supported ' + config.type)
-
-    def get_noise_strength(self, x, config: NoiseStrengthConfig) -> torch.Tensor:
-        if config.type == 'random':
-            config = config.random
-
-            use_noise_mask = (torch.rand(x.size(0), device=x.device) < config.noise_proba).float()
-            noise_strength = use_noise_mask * self.get_random_distribution(x, config.random_distribution_config)
-        elif config.type == 'max':
-            noise_strength = torch.ones(x.size(0), dtype=torch.float, device=x.device)
         elif config.type == 'sample':
             config = config.sample
 
@@ -137,8 +127,7 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
             noise_mask[:num_noised] = True
 
             # Shuffle the mask to randomize which images are noised
-            noise_mask = noise_mask[torch.randperm(batch_size)]
-            noise_strength = noise_mask * self.get_random_distribution(x, config.random_distribution_config)
+            return noise_mask[torch.randperm(batch_size)]
         elif config.type == 'sample_seq':
             config = config.sample_seq
 
@@ -154,11 +143,20 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
             noise_mask[:num_noised, :] = True
 
             # Shuffle the mask to randomize which batch are noised
-            noise_mask = noise_mask[torch.randperm(noise_mask.size(0)), :].view(batch_size)
-
-            noise_strength = noise_mask * self.get_random_distribution(x, config.random_distribution_config)
+            return noise_mask[torch.randperm(noise_mask.size(0)), :].float().view(batch_size)
         else:
             raise Exception('Not supported ' + config.type)
+
+    def get_noise_strength(self, x, config: NoiseStrengthConfig) -> torch.Tensor:
+        noise_strength = None
+
+        for random_distribution_config in config.mult_random_distributions:
+            distribution = self.get_random_distribution(x, random_distribution_config)
+
+            if noise_strength is None:
+                noise_strength = distribution
+            else:
+                noise_strength *= distribution
 
         return noise_strength
 
@@ -202,37 +200,31 @@ if __name__ == "__main__":
         encoder=nn.Identity(),
         config=EasyDict(
             dict(
+                use_norm=False,
                 noise_strength_config=dict(
-                    type='sample',
-                    random=dict(
-                        noise_proba=0.95,
-                        random_distribution_config=dict(
-                            type='max',
-                            power=dict(
-                                power=2.
+                    mult_random_distributions=[
+                        dict(
+                            type='sample_seq',
+                            sample_seq=dict(
+                                noise_samples_perc=0.75,
+                                seq_length=10
                             )
+                        ),
+                        dict(
+                            type='rand_linear'
                         )
-                    ),
-                    sample=dict(
-                        noise_samples_perc=0.95,
-                        random_distribution_config=dict(
-                            type='max',
-                            power=dict(
-                                power=2.
-                            )
-                        )
-                    )
+                    ]
                 ),
                 noise_scheduler=dict(
                     initial_noise = 0.25,
-                    final_noise = 0.01,
-                    schedule_length = 500,
-                    decay_type = 'cos_cycle'
+                    final_noise = 0.,
+                    schedule_length = 1000,
+                    decay_type = 'constant'
                 )
             )
         )
     )
 
     for step in range(300):
-        noise.forward_noised(torch.rand(650, 4, 4, 4))
+        noise.forward_noised(torch.rand(640, 4, 4, 4))
 
