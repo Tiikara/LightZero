@@ -132,7 +132,7 @@ atari_unizero_config = dict(
                 noise_config=dict(
                     use_norm=False,
                     noise_strength_config=dict(
-                        type='sample',
+                        type='sample_seq',
                         random=dict(
                             noise_proba=0.95,
                             random_distribution_config=dict(
@@ -150,13 +150,23 @@ atari_unizero_config = dict(
                                     power=2.
                                 )
                             )
+                        ),
+                        sample_seq=dict(
+                            noise_samples_perc=0.75,
+                            seq_length=10,
+                            random_distribution_config=dict(
+                                type='linear',
+                                power=dict(
+                                    power=2.
+                                )
+                            )
                         )
                     ),
                     noise_scheduler=dict(
                         initial_noise = 0.25,
                         final_noise = 0.,
                         schedule_length = 1000,
-                        decay_type = 'cos_cycle'
+                        decay_type = 'constant'
                     )
                 ),
                 latent_enc_entropy_loss_weight=None,

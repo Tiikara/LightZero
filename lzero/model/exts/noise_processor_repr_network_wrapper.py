@@ -26,10 +26,17 @@ class NoiseStrengthSampleConfig:
     random_distribution_config: NoiseRandomDistributionConfig
 
 @dataclass
+class NoiseStrengthSampleSeqConfig:
+    seq_length: int
+    noise_samples_perc: float
+    random_distribution_config: NoiseRandomDistributionConfig
+
+@dataclass
 class NoiseStrengthConfig:
     type: str
     random: NoiseStrengthRandomConfig
     sample: NoiseStrengthSampleConfig
+    sample_seq: NoiseStrengthSampleSeqConfig
 
 @dataclass
 class NoiseSchedulerConfig:
@@ -131,6 +138,23 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
 
             # Shuffle the mask to randomize which images are noised
             noise_mask = noise_mask[torch.randperm(batch_size)]
+            noise_strength = noise_mask * self.get_random_distribution(x, config.random_distribution_config)
+        elif config.type == 'sample_seq':
+            config = config.sample_seq
+
+            batch_size = x.size(0)
+
+            # Create a mask with a fixed number of True values
+            noise_mask = torch.zeros(batch_size, dtype=torch.bool, device=x.device)
+            noise_mask = noise_mask.view(-1, config.seq_length)
+            num_noised = int(noise_mask.size(0) * config.noise_samples_perc)
+            noise_mask[:num_noised, :] = True
+
+            # Shuffle the mask to randomize which batch are noised
+            noise_mask = noise_mask[torch.randperm(noise_mask.size(0)), :].view(batch_size)
+
+            print(noise_mask)
+
             noise_strength = noise_mask * self.get_random_distribution(x, config.random_distribution_config)
         else:
             raise Exception('Not supported ' + config.type)
