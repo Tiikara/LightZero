@@ -196,6 +196,10 @@ class LossWithIntermediateLosses:
 
     def __truediv__(self, value):
         for k, v in self.intermediate_losses.items():
-            self.intermediate_losses[k] = v / value
+            if isinstance(v, dict):
+                for ik, iv in v.items():
+                    self.intermediate_losses[k][ik] = iv / value
+            else:
+                self.intermediate_losses[k] = v / value
         self.loss_total = self.loss_total / value
         return self

@@ -892,10 +892,10 @@ class WorldModel(nn.Module):
 
         return self.keys_values_wm_size_list
 
-    def compute_loss(self, batch, target_tokenizer: Tokenizer = None, inverse_scalar_transform_handle=None, **kwargs: Any) -> LossWithIntermediateLosses:
+    def compute_loss(self, batch, target_tokenizer: Tokenizer = None, noise_level=1., inverse_scalar_transform_handle=None, **kwargs: Any) -> LossWithIntermediateLosses:
         # Encode observations into latent state representations
         if self.use_noisy_aug:
-            obs_embeddings = self.tokenizer.encode_to_obs_embeddings_with_noise(batch['observations'])
+            obs_embeddings = self.tokenizer.encode_to_obs_embeddings_with_noise(batch['observations'], noise_level=noise_level)
         else:
             obs_embeddings = self.tokenizer.encode_to_obs_embeddings(batch['observations'])
 

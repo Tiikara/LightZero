@@ -8,7 +8,7 @@ class ResFeedForwardBlock(nn.Module):
             self,
             in_channels: int,
             hidden_channels: int,
-            activation: nn.Module = nn.ReLU(),
+            activation: nn.Module = nn.GELU(approximate='tanh'),
             bias=True,
             dropout: float = None
     ):

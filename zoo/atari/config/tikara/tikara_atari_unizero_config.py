@@ -129,10 +129,11 @@ atari_unizero_config = dict(
                 predict_latent_loss_type='log_cosh_except_one',
                 reg_type=False, # vic |
                 use_noisy_aug=True,
+                use_noise_levels=True,
                 noise_config=dict(
                     use_norm=False,
                     noise_strength_config=dict(
-                        type='sample',
+                        type='max',
                         random=dict(
                             noise_proba=0.95,
                             random_distribution_config=dict(
@@ -156,7 +157,7 @@ atari_unizero_config = dict(
                         initial_noise = 0.25,
                         final_noise = 0.,
                         schedule_length = 1000,
-                        decay_type = 'cos_cycle'
+                        decay_type = 'constant'
                     )
                 ),
                 latent_enc_entropy_loss_weight=None,

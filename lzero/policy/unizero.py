@@ -15,6 +15,7 @@ from lzero.policy import scalar_transform, InverseScalarTransform, phi_transform
     prepare_obs_stack4_for_unizero
 from lzero.policy.muzero import MuZeroPolicy
 from .utils import configure_optimizers_nanogpt
+from ..model.exts.generate_noise_levels import generate_noise_levels
 
 
 @POLICY_REGISTRY.register('unizero')
@@ -407,36 +408,133 @@ class UniZeroPolicy(MuZeroPolicy):
         target_policy_entropy = -torch.sum(valid_target_policy * torch.log(valid_target_policy + 1e-9), dim=-1)
         average_target_policy_entropy = target_policy_entropy.mean().item()
 
-        # Update world model
-        losses = self._learn_model.world_model.compute_loss(
-            batch_for_gpt, self._target_model.world_model.tokenizer, self.inverse_scalar_transform_handle
-        )
-
-        weighted_total_loss = losses.loss_total
-        for loss_name, loss_value in losses.intermediate_losses.items():
-            self.intermediate_losses[f"{loss_name}"] = loss_value
-
-        obs_loss = self.intermediate_losses['loss_obs']
-        reward_loss = self.intermediate_losses['loss_rewards']
-        policy_loss = self.intermediate_losses['loss_policy']
-        value_loss = self.intermediate_losses['loss_value']
-        latent_recon_loss = self.intermediate_losses['latent_recon_loss']
-        perceptual_loss = self.intermediate_losses['perceptual_loss']
-        orig_policy_loss = self.intermediate_losses['orig_policy_loss']
-        policy_entropy = self.intermediate_losses['policy_entropy']
-        first_step_losses = self.intermediate_losses['first_step_losses']
-        middle_step_losses = self.intermediate_losses['middle_step_losses']
-        last_step_losses = self.intermediate_losses['last_step_losses']
-        dormant_ratio_encoder = self.intermediate_losses['dormant_ratio_encoder']
-        dormant_ratio_world_model = self.intermediate_losses['dormant_ratio_world_model']
-        latent_state_l2_norms = self.intermediate_losses['latent_state_l2_norms']
-
-        assert not torch.isnan(losses.loss_total).any(), "Loss contains NaN values"
-        assert not torch.isinf(losses.loss_total).any(), "Loss contains Inf values"
-
-        # Core learn model update step
         self._optimizer_world_model.zero_grad()
-        weighted_total_loss.backward()
+
+        if self._cfg.model.world_model_cfg.use_noise_levels:
+            num_noise_levels = 10
+
+            base_levels, noise_levels = generate_noise_levels(
+                batch_size=batch_for_gpt['observations'].size(0) * batch_for_gpt['observations'].size(1),
+                num_levels=num_noise_levels,
+                device=batch_for_gpt['observations'].device
+            )
+
+            losses_levels = []
+
+            levels_accumulated_gradients = []
+
+            for idx_noise_level in range(num_noise_levels):
+                losses = self._learn_model.world_model.compute_loss(
+                    batch_for_gpt, self._target_model.world_model.tokenizer, noise_levels[:, idx_noise_level], self.inverse_scalar_transform_handle
+                )
+
+                losses_levels.append(losses)
+
+                losses.loss_total.backward()
+
+                accumulated_gradients = []
+
+                for param in self._learn_model.world_model.parameters():
+                    if param.grad is not None:
+                        accumulated_gradients.append(param.grad.clone())
+
+                levels_accumulated_gradients.append(accumulated_gradients)
+
+                if idx_noise_level != num_noise_levels - 1:
+                    self._optimizer_world_model.zero_grad()
+
+            # base_entropy = losses_levels[0].intermediate_losses['policy_entropy']
+            # relative_entropies = [(losses.intermediate_losses['policy_entropy'] - base_entropy) for losses in losses_levels]
+            # noise_weights = np.exp(relative_entropies)
+            # noise_weights[1:] /= np.sum(noise_weights[1:])
+            # noise_weights[1:] *= 0.5
+            # noise_weights[0] = 0.5
+
+            noise_weights = []
+
+            for idx_noise_level in range(num_noise_levels):
+                # noise_weights.append(losses_levels[idx_noise_level].loss_total.item() * torch.exp(-5 * base_levels[idx_noise_level]))
+                noise_weights.append(
+                    losses_levels[idx_noise_level].loss_total.item() * torch.log1p(1 + 1 / (base_levels[idx_noise_level] + 1e-5))
+                )
+
+            summ_noise_weights = 0.
+            for noise_weight in noise_weights:
+                summ_noise_weights += noise_weight
+
+            for idx_noise_level in range(num_noise_levels):
+                noise_weights[idx_noise_level] = noise_weights[idx_noise_level] / summ_noise_weights
+
+            print(noise_weights)
+
+            for idx_noise_level, losses in enumerate(losses_levels):
+                losses = losses / (1.0 / noise_weights[idx_noise_level])
+
+                if idx_noise_level == 0:
+                    weighted_total_loss = losses.loss_total
+                    for loss_name, loss_value in losses.intermediate_losses.items():
+                        self.intermediate_losses[f"{loss_name}"] = loss_value
+                else:
+                    weighted_total_loss = weighted_total_loss + losses.loss_total
+                    for loss_name, loss_value in losses.intermediate_losses.items():
+                        if isinstance(loss_value, dict):
+                            for iloss_name, iloss_value in loss_value.items():
+                                self.intermediate_losses[f"{loss_name}"][iloss_name] = self.intermediate_losses[f"{loss_name}"][iloss_name] + iloss_value
+                        else:
+                            self.intermediate_losses[f"{loss_name}"] = self.intermediate_losses[f"{loss_name}"] + loss_value
+
+                obs_loss = self.intermediate_losses['loss_obs']
+                reward_loss = self.intermediate_losses['loss_rewards']
+                policy_loss = self.intermediate_losses['loss_policy']
+                value_loss = self.intermediate_losses['loss_value']
+                latent_recon_loss = self.intermediate_losses['latent_recon_loss']
+                perceptual_loss = self.intermediate_losses['perceptual_loss']
+                orig_policy_loss = self.intermediate_losses['orig_policy_loss']
+                policy_entropy = self.intermediate_losses['policy_entropy']
+                first_step_losses = self.intermediate_losses['first_step_losses']
+                middle_step_losses = self.intermediate_losses['middle_step_losses']
+                last_step_losses = self.intermediate_losses['last_step_losses']
+                dormant_ratio_encoder = self.intermediate_losses['dormant_ratio_encoder']
+                dormant_ratio_world_model = self.intermediate_losses['dormant_ratio_world_model']
+                latent_state_l2_norms = self.intermediate_losses['latent_state_l2_norms']
+
+                assert not torch.isnan(losses.loss_total).any(), "Loss contains NaN values"
+                assert not torch.isinf(losses.loss_total).any(), "Loss contains Inf values"
+
+            for param_idx, param in enumerate(self._learn_model.world_model.parameters()):
+                if param.grad is not None:
+                    param.grad.zero_()
+                    for level_idx, accumulated_gradients in enumerate(levels_accumulated_gradients):
+                        param.grad.add_(accumulated_gradients[param_idx] * noise_weights[level_idx])
+        else:
+            # Update world model
+            losses = self._learn_model.world_model.compute_loss(
+                batch_for_gpt, self._target_model.world_model.tokenizer, 1., self.inverse_scalar_transform_handle
+            )
+
+            losses.loss_total.backward()
+
+            weighted_total_loss = losses.loss_total
+            for loss_name, loss_value in losses.intermediate_losses.items():
+                self.intermediate_losses[f"{loss_name}"] = loss_value
+
+            obs_loss = self.intermediate_losses['loss_obs']
+            reward_loss = self.intermediate_losses['loss_rewards']
+            policy_loss = self.intermediate_losses['loss_policy']
+            value_loss = self.intermediate_losses['loss_value']
+            latent_recon_loss = self.intermediate_losses['latent_recon_loss']
+            perceptual_loss = self.intermediate_losses['perceptual_loss']
+            orig_policy_loss = self.intermediate_losses['orig_policy_loss']
+            policy_entropy = self.intermediate_losses['policy_entropy']
+            first_step_losses = self.intermediate_losses['first_step_losses']
+            middle_step_losses = self.intermediate_losses['middle_step_losses']
+            last_step_losses = self.intermediate_losses['last_step_losses']
+            dormant_ratio_encoder = self.intermediate_losses['dormant_ratio_encoder']
+            dormant_ratio_world_model = self.intermediate_losses['dormant_ratio_world_model']
+            latent_state_l2_norms = self.intermediate_losses['latent_state_l2_norms']
+
+            assert not torch.isnan(losses.loss_total).any(), "Loss contains NaN values"
+            assert not torch.isinf(losses.loss_total).any(), "Loss contains Inf values"
 
         #  ========== for debugging ==========
         # for name, param in self._learn_model.world_model.tokenizer.encoder.named_parameters():

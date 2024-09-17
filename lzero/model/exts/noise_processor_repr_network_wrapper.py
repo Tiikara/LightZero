@@ -137,8 +137,9 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
 
         return noise_strength
 
-    def forward_noised(self, x: torch.Tensor) -> torch.Tensor:
+    def forward_noised(self, x: torch.Tensor, noise_level=1.) -> torch.Tensor:
         """
+        :param noise_level: Level of noise
         :param x: [batch_size, C, H, W]
         """
         assert len(x.shape) == 4
@@ -148,7 +149,7 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
             config=self.config.noise_strength_config
         )
 
-        std_devs = noise_strength * self.noise_scheduler.step()
+        std_devs = noise_strength * noise_level * self.noise_scheduler.step()
 
         if self.config.use_norm:
             x_noised = apply_gaussian_noise_with_norm(x, std_devs)
