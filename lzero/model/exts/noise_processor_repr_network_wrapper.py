@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 import torch
 from torch import nn
@@ -33,7 +34,7 @@ class NoiseRandomDistributionConfig:
 
 @dataclass
 class NoiseStrengthConfig:
-    mult_random_distributions: list[NoiseRandomDistributionConfig]
+    mult_random_distributions: List[NoiseRandomDistributionConfig]
 
 @dataclass
 class NoiseSchedulerConfig:
@@ -127,7 +128,7 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
             noise_mask[:num_noised] = True
 
             # Shuffle the mask to randomize which images are noised
-            return noise_mask[torch.randperm(batch_size)]
+            return noise_mask[torch.randperm(batch_size)].float()
         elif config.type == 'sample_seq':
             config = config.sample_seq
 
@@ -143,7 +144,7 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
             noise_mask[:num_noised, :] = True
 
             # Shuffle the mask to randomize which batch are noised
-            return noise_mask[torch.randperm(noise_mask.size(0)), :].float().view(batch_size)
+            return noise_mask[torch.randperm(noise_mask.size(0)), :].view(batch_size).float()
         else:
             raise Exception('Not supported ' + config.type)
 
