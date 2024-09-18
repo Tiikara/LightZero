@@ -174,8 +174,6 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
 
                 shuffled_mask = torch.gather(noise_mask, 1, shuffled_indices)
 
-                print(shuffled_mask)
-
                 return shuffled_mask.view(batch_size).float()
         else:
             raise Exception('Not supported ' + config.type)
