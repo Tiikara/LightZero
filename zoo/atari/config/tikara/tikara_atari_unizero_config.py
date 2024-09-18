@@ -141,6 +141,14 @@ atari_unizero_config = dict(
                                 )
                             ),
                             dict(
+                               type='in_seq_sample_range',
+                                in_seq_sample_range=dict(
+                                    noise_samples_perc_from=0.7,
+                                    noise_samples_perc_to=1.,
+                                    seq_length=10
+                                )
+                            ),
+                            dict(
                                 type='rand_linear'
                             )
                         ]

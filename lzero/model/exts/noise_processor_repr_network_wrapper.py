@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
+import random
 import torch
 from torch import nn
 
@@ -25,12 +26,19 @@ class NoiseRandomDistributionSampleSeqConfig:
     noise_samples_perc: float
 
 @dataclass
+class NoiseRandomDistributionInSeqSampleRangeSeqConfig:
+    seq_length: int
+    noise_samples_perc_from: float
+    noise_samples_perc_to: float
+
+@dataclass
 class NoiseRandomDistributionConfig:
     type: str
     sample_seq: NoiseRandomDistributionSampleSeqConfig
     sample: NoiseRandomDistributionSampleConfig
     select_rand: NoiseRandomDistributionSelectRandConfig
     rand_power: NoiseRandomDistributionPowerConfig
+    in_seq_sample_range: NoiseRandomDistributionInSeqSampleRangeSeqConfig
 
 @dataclass
 class NoiseStrengthConfig:
@@ -92,8 +100,12 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
 
         self.encoder = encoder
 
-        self.out_create_layers = encoder.out_create_layers
-        self.projection_model = encoder.projection_model
+        if hasattr(encoder, 'out_create_layers'):
+            self.out_create_layers = encoder.out_create_layers
+
+        if hasattr(encoder, 'projection_model'):
+            self.projection_model = encoder.projection_model
+
         self.config = config
 
         noise_scheduler_config = config.noise_scheduler
@@ -138,13 +150,33 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
             noise_mask = torch.zeros(batch_size, dtype=torch.bool, device=x.device)
             noise_mask = noise_mask.view(-1, config.seq_length)
 
-            assert noise_mask.size(0) == 64 # debug
-
             num_noised = int(noise_mask.size(0) * config.noise_samples_perc)
             noise_mask[:num_noised, :] = True
 
             # Shuffle the mask to randomize which batch are noised
             return noise_mask[torch.randperm(noise_mask.size(0)), :].view(batch_size).float()
+        elif config.type == 'in_seq_sample_range':
+            config = config.in_seq_sample_range
+
+            batch_size = x.size(0)
+
+            # Create a mask with a fixed number of True values
+            noise_mask = torch.zeros(batch_size, dtype=torch.bool, device=x.device)
+            noise_mask = noise_mask.view(-1, config.seq_length)
+
+            num_noised = int(noise_mask.size(1) * random.uniform(config.noise_samples_perc_from, config.noise_samples_perc_to))
+            if num_noised == 0:
+                return torch.zeros(x.size(0), dtype=torch.float, device=x.device)
+            else:
+                noise_mask[:, :num_noised] = True
+
+                shuffled_indices = torch.argsort(torch.rand_like(noise_mask.float(), device=noise_mask.device), dim=1)
+
+                shuffled_mask = torch.gather(noise_mask, 1, shuffled_indices)
+
+                print(shuffled_mask)
+
+                return shuffled_mask.view(batch_size).float()
         else:
             raise Exception('Not supported ' + config.type)
 
@@ -212,6 +244,14 @@ if __name__ == "__main__":
                             )
                         ),
                         dict(
+                            type='in_seq_sample_range',
+                            in_seq_sample_range=dict(
+                                noise_samples_perc_from=0.7,
+                                noise_samples_perc_to=1.,
+                                seq_length=10
+                            )
+                        ),
+                        dict(
                             type='rand_linear'
                         )
                     ]
@@ -227,5 +267,5 @@ if __name__ == "__main__":
     )
 
     for step in range(300):
-        noise.forward_noised(torch.rand(640, 4, 4, 4))
+        noise.forward_noised(torch.rand(600, 4, 4, 4))
 
