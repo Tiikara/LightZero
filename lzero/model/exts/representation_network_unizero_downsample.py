@@ -25,6 +25,7 @@ from collections import OrderedDict
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, PrimaryCapsForward1D
 from .multiply_module import MultiplyModule
+from .norm.grouped_instance_normalization import GroupedInstanceNormalization
 from .norms.rms_norm import RMSNorm
 from .remove_first_dim_module import RemoveFirstDimModule, RemoveFirstDimsModule
 from .res_fc_block import ResFCBlock
@@ -619,6 +620,29 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                         RemoveFirstDimModule(),
                         nn.LayerNorm(self.embedding_dim - 1),
                         AddDimToStartModule(0)
+                    )
+                )
+            ]
+        elif head_type == 'linear_grouped_instance_norm_except_one':
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim - 1,
+                    bias=False
+                ),
+                AddDimToStartModule(0),
+                GroupedInstanceNormalization(num_features=self.embedding_dim, num_groups=32)
+            )
+
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    nn.Sequential(
+                        RemoveFirstDimModule(),
+                        AddDimToStartModule(0),
+                        GroupedInstanceNormalization(num_features=self.embedding_dim, num_groups=32)
                     )
                 )
             ]

@@ -92,7 +92,7 @@ atari_unizero_config = dict(
                     num_layers=1,
                     last_norm=None
                 ),
-                head_type='linear_norm_except_one',
+                head_type='linear_grouped_instance_norm_except_one',
                 head=dict(
                     linear=dict(
                         use_coords=False
@@ -137,14 +137,6 @@ atari_unizero_config = dict(
                                 type='sample_seq',
                                 sample_seq=dict(
                                     noise_samples_perc=0.75,
-                                    seq_length=10
-                                )
-                            ),
-                            dict(
-                               type='in_seq_sample_range',
-                                in_seq_sample_range=dict(
-                                    noise_samples_perc_from=0.7,
-                                    noise_samples_perc_to=1.,
                                     seq_length=10
                                 )
                             ),
