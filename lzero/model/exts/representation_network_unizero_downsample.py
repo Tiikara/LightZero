@@ -624,25 +624,27 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 )
             ]
         elif head_type == 'linear_grouped_instance_norm_except_one':
+            group_size = 32
+
             self.head = nn.Sequential(
                 ReshapeLastDim1D(
                     out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
                 ),
                 nn.Linear(
                     self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
-                    self.embedding_dim - 1,
+                    self.embedding_dim - group_size,
                     bias=False
                 ),
-                AddDimToStartModule(0),
-                GroupedInstanceNormalization(num_features=self.embedding_dim, num_groups=32)
+                GroupedInstanceNormalization(num_features=self.embedding_dim - group_size, group_size=group_size),
+                AddDimsToStartModule(dims=group_size, value=0)
             )
 
             self.out_create_layers = [
                 lambda: SecondDimCheck(
                     nn.Sequential(
-                        RemoveFirstDimModule(),
-                        AddDimToStartModule(0),
-                        GroupedInstanceNormalization(num_features=self.embedding_dim, num_groups=32)
+                        RemoveFirstDimsModule(group_size),
+                        GroupedInstanceNormalization(num_features=self.embedding_dim - group_size, group_size=group_size),
+                        AddDimsToStartModule(dims=group_size, value=0)
                     )
                 )
             ]
