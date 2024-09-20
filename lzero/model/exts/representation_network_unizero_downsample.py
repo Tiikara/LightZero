@@ -624,8 +624,6 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 )
             ]
         elif head_type == 'linear_grouped_instance_norm_except_one':
-            group_size = 32
-
             self.head = nn.Sequential(
                 ReshapeLastDim1D(
                     out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
