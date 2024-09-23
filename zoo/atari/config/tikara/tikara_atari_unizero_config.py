@@ -92,7 +92,7 @@ atari_unizero_config = dict(
                     num_layers=1,
                     last_norm=None
                 ),
-                head_type='simnorm_except_one',
+                head_type='linear_norm_except_one',
                 head=dict(
                     linear=dict(
                         use_coords=False
@@ -131,7 +131,7 @@ atari_unizero_config = dict(
                 reg_type=False, # vic |
                 use_noisy_aug=True,
                 noise_config=dict(
-                    use_norm=False,
+                    use_norm=True,
                     noise_strength_config=dict(
                         mult_random_distributions=[
                             dict(
