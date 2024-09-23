@@ -16,6 +16,7 @@ from lzero.model.common import NormByType
 from functools import partial
 
 from .down_sample_full_pos import DownSampleFullPos
+from .dynamic_attention import DynamicAttention1D
 from .efficientnet_v2 import MBConvConfig, MBConv, ConvBNAct
 from .capsnet_layers import PrimaryCaps, RoutingCaps, Squash
 import math
@@ -26,6 +27,7 @@ from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, PrimaryCapsForward1D
 from .multiply_module import MultiplyModule
 from .norm.grouped_instance_normalization import GroupedInstanceNormalization
+from .norm.uan import UAN
 from .norms.rms_norm import RMSNorm
 from .remove_first_dim_module import RemoveFirstDimModule, RemoveFirstDimsModule
 from .res_fc_block import ResFCBlock
@@ -620,6 +622,98 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                         RemoveFirstDimModule(),
                         nn.LayerNorm(self.embedding_dim - 1),
                         AddDimToStartModule(0)
+                    )
+                )
+            ]
+        elif head_type == 'linear_uan_except_one':
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim - 1,
+                    bias=False
+                ),
+                UAN(self.embedding_dim - 1),
+                AddDimToStartModule(0)
+            )
+
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    ReturnShapeModule(
+                        nn.Sequential(
+                            ReshapeLastDim1D(self.embedding_dim),
+                            RemoveFirstDimModule(),
+                            UAN(self.embedding_dim - 1),
+                            AddDimToStartModule(0)
+                        )
+                    )
+                )
+            ]
+        elif head_type == 'linear_dyn_norm_except_one':
+            self.head = nn.Sequential(
+                ReshapeLastDim1D(
+                    out_features=self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size
+                ),
+                nn.Linear(
+                    self.downsample_net.out_features * self.downsample_net.out_size * self.downsample_net.out_size,
+                    self.embedding_dim - 1,
+                    bias=False
+                ),
+                DynamicAttention1D(
+                    num_features=self.embedding_dim - 1,
+                    backbone_attention=nn.Sequential(
+                        ResFeedForwardBlock(
+                            in_channels = self.embedding_dim - 1,
+                            hidden_channels = self.embedding_dim - 1,
+                            activation = activation,
+                            bias = False
+                        ),
+                        nn.Linear(self.embedding_dim - 1, 3)
+                    ),
+                    paths=nn.ModuleList([
+                        nn.LayerNorm(self.embedding_dim - 1),
+                        nn.Sequential(
+                            RemoveFirstDimsModule(group_size - 1),
+                            GroupedInstanceNormalization(num_features=self.embedding_dim - group_size, group_size=group_size),
+                            AddDimsToStartModule(dims=group_size - 1, value=0)
+                        ),
+                        nn.Sigmoid()
+                    ])
+                ),
+                AddDimToStartModule(0)
+            )
+
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    ReturnShapeModule(
+                        nn.Sequential(
+                            ReshapeLastDim1D(self.embedding_dim),
+                            RemoveFirstDimModule(),
+                            DynamicAttention1D(
+                                num_features=self.embedding_dim - 1,
+                                backbone_attention=nn.Sequential(
+                                    ResFeedForwardBlock(
+                                        in_channels = self.embedding_dim - 1,
+                                        hidden_channels = self.embedding_dim - 1,
+                                        activation = activation,
+                                        bias = False
+                                    ),
+                                    nn.Linear(self.embedding_dim - 1, 3)
+                                ),
+                                paths=nn.ModuleList([
+                                    nn.LayerNorm(self.embedding_dim - 1),
+                                    nn.Sequential(
+                                        RemoveFirstDimsModule(group_size - 1),
+                                        GroupedInstanceNormalization(num_features=self.embedding_dim - group_size, group_size=group_size),
+                                        AddDimsToStartModule(dims=group_size - 1, value=0)
+                                    ),
+                                    nn.Sigmoid()
+                                ])
+                            ),
+                            AddDimToStartModule(0)
+                        )
                     )
                 )
             ]

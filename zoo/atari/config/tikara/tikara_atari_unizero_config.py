@@ -92,7 +92,7 @@ atari_unizero_config = dict(
                     num_layers=1,
                     last_norm=None
                 ),
-                head_type='linear_grouped_instance_norm_except_one',
+                head_type='simnorm_except_one',
                 head=dict(
                     linear=dict(
                         use_coords=False
@@ -119,6 +119,7 @@ atari_unizero_config = dict(
                 num_layers=4,
                 num_heads=8,
                 embed_dim=768,
+                # group_size=32,
                 obs_type='image',
                 transformer_norm_type='LN', # LN - LayerNorm (default: UniZero), RMS - RMSNorm
                 transformer_feed_forward_type='base', # base - L->GELU-L (default: UniZero), swiglu - L->SwiGLU-L
@@ -167,6 +168,7 @@ atari_unizero_config = dict(
         ),
         use_late_dropout=False,
         # (str) The path of the pretrained model. If None, the model will be initialized by the default model.
+        # /mnt/d/source/LightZero/data_unizero/Pong_stack1_unizero_upcNone-rr0.25_H10_bs64_seed1726102429/ckpt/ckpt_best.pth.tar
         model_path=None,
         num_unroll_steps=num_unroll_steps,
         update_per_collect=update_per_collect,

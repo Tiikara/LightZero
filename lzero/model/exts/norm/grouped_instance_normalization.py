@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class GroupedInstanceNormalization(nn.Module):
 
-    def __init__(self, num_features: int, group_size: int) -> None:
+    def __init__(self, num_features: int, group_size: int, affine: bool=True, track_running_stats: bool = False) -> None:
         super().__init__()
 
         assert num_features % group_size == 0
@@ -12,7 +12,7 @@ class GroupedInstanceNormalization(nn.Module):
         self.num_features = num_features
         self.num_groups = num_features // group_size
         self.group_size = group_size
-        self.in_norm = nn.InstanceNorm1d(self.num_groups, affine=True)
+        self.in_norm = nn.InstanceNorm1d(self.num_groups, affine=affine, track_running_stats=track_running_stats)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert x.size(-1) == self.num_features
