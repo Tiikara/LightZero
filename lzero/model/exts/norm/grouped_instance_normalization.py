@@ -24,4 +24,4 @@ class GroupedInstanceNormalization(nn.Module):
         return self.in_norm(x).view(shp)
 
     def __repr__(self) -> str:
-        return f"GroupedInstanceNormalization(num_features={self.num_features}, num_groups=${self.num_groups})"
+        return f"GroupedInstanceNormalization(num_features={self.num_features}, num_groups={self.num_groups}, group_size={self.group_size})"

@@ -740,6 +740,30 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                     )
                 )
             ]
+        elif head_type == 'linear_flat_grouped_instance_norm_except_one':
+            assert self.embedding_dim % (self.downsample_net.out_size * self.downsample_net.out_size) == 0
+
+            last_conv_features = self.embedding_dim // (self.downsample_net.out_size * self.downsample_net.out_size)
+
+            self.head = nn.Sequential(
+                nn.Conv2d(self.downsample_net.out_features, last_conv_features, 1),
+                ReshapeLastDim1D(
+                    out_features=self.embedding_dim
+                ),
+                RemoveFirstDimsModule(group_size),
+                GroupedInstanceNormalization(num_features=self.embedding_dim - group_size, group_size=group_size),
+                AddDimsToStartModule(dims=group_size, value=0)
+            )
+
+            self.out_create_layers = [
+                lambda: SecondDimCheck(
+                    nn.Sequential(
+                        RemoveFirstDimsModule(group_size),
+                        GroupedInstanceNormalization(num_features=self.embedding_dim - group_size, group_size=group_size),
+                        AddDimsToStartModule(dims=group_size, value=0)
+                    )
+                )
+            ]
         elif head_type == 'linear_norm_gelu_except_one':
             self.head = nn.Sequential(
                 ReshapeLastDim1D(
