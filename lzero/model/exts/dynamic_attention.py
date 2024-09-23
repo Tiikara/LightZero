@@ -30,9 +30,6 @@ class DynamicAttention1D(nn.Module):
         att = self.backbone_attention(x)
         w = F.softmax(att, dim=-1)
 
-        print("Mean: ", torch.mean(w, dim=0))
-        print("Std: ", torch.std(w, dim=0))
-
         # norm
         x_normalized = torch.zeros_like(x)
         for k in range(len(self.paths)):
