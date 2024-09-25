@@ -73,12 +73,12 @@ atari_unizero_config = dict(
             representaion_model=dict(
                 type='downsample',
                 downsample_network=dict(
-                    type='base',
+                    type='res_net',
                     res_net=dict(
                         use_coords=False,
                         start_channels=32,
-                        channels_scale=1.2,
-                        num_blocks=1,
+                        channels_scale=1.6,
+                        num_blocks=0,
                     ),
                     flat=dict(
                         start_channels=32,
@@ -92,7 +92,7 @@ atari_unizero_config = dict(
                     num_layers=1,
                     last_norm=None
                 ),
-                head_type='linear_flat_grouped_instance_norm_except_one',
+                head_type='linear_norm_except_one',
                 head=dict(
                     linear=dict(
                         use_coords=False

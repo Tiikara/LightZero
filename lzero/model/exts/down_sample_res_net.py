@@ -73,7 +73,7 @@ class DownSampleResNet(nn.Module):
             )
         ]
 
-        while current_size > 5:
+        while current_size >= 3:
             new_channels = int(current_channels * channels_scale)
             current_size = current_size // 2
 
