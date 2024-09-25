@@ -15,6 +15,7 @@ from lzero.model.common import SimNorm
 from lzero.model.common import NormByType
 from functools import partial
 
+from .convnext_down_sample import BaseConvNeXtDownSample
 from .down_sample_full_pos import DownSampleFullPos
 from .dynamic_attention import DynamicAttention1D
 from .efficientnet_v2 import MBConvConfig, MBConv, ConvBNAct
@@ -134,6 +135,10 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 norm_type=norm_type,
                 channels_scale=flat_config.channels_scale,
                 num_blocks=flat_config.num_blocks
+            )
+        elif downsample_network_config.type == 'base_convnext':
+            self.downsample_net = BaseConvNeXtDownSample(
+                observation_shape=observation_shape,
             )
         else:
             raise "Not supported " + downsample_network_config.type
