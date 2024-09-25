@@ -39,7 +39,8 @@ class BaseConvNeXtDownSampleBody(nn.Module):
         self.resblocks1 = nn.ModuleList(
             [
                 ConvNeXtBlock(
-                    in_channels=out_channels // 2
+                    in_channels=out_channels // 2,
+                    kernel_size=3
                 ) for _ in range(1)
             ]
         )
@@ -52,7 +53,8 @@ class BaseConvNeXtDownSampleBody(nn.Module):
         self.resblocks2 = nn.ModuleList(
             [
                 ConvNeXtBlock(
-                    in_channels=out_channels
+                    in_channels=out_channels,
+                    kernel_size=3
                 ) for _ in range(1)
             ]
         )
@@ -65,7 +67,8 @@ class BaseConvNeXtDownSampleBody(nn.Module):
         self.resblocks3 = nn.ModuleList(
             [
                 ConvNeXtBlock(
-                    in_channels=out_channels
+                    in_channels=out_channels,
+                    kernel_size=3
                 ) for _ in range(1)
             ]
         )
@@ -133,7 +136,8 @@ class BaseConvNeXtDownSample(nn.Module):
         self.resblocks = nn.ModuleList(
             [
                 ConvNeXtBlock(
-                    in_channels=num_channels
+                    in_channels=num_channels,
+                    kernel_size=3
                 ) for _ in range(num_res_blocks)
             ]
         )

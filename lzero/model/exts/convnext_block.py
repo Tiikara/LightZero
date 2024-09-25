@@ -41,13 +41,13 @@ class ConvNeXtBlock(nn.Module):
         drop_path (float): Stochastic depth rate. Default: 0.0
         layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
     """
-    def __init__(self, in_channels, layer_scale_init_value=1e-6):
+    def __init__(self, in_channels, kernel_size=7, layer_scale_init_value=1e-6):
         super().__init__()
-        self.dwconv = nn.Conv2d(in_channels, in_channels, kernel_size=7, padding=3, groups=in_channels) # depthwise conv
+        self.dwconv = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, padding=kernel_size // 2, groups=in_channels) # depthwise conv
         self.norm = ConvNeXtLayerNorm(in_channels, eps=1e-5)
-        self.pwconv1 = nn.Linear(in_channels, 3 * in_channels) # pointwise/1x1 convs, implemented with linear layers
+        self.pwconv1 = nn.Linear(in_channels, 4 * in_channels) # pointwise/1x1 convs, implemented with linear layers
         self.act = nn.GELU()
-        self.pwconv2 = nn.Linear(3 * in_channels, in_channels)
+        self.pwconv2 = nn.Linear(4 * in_channels, in_channels)
         self.gamma = nn.Parameter(layer_scale_init_value * torch.ones((in_channels)),
                                   requires_grad=True) if layer_scale_init_value > 0 else None
         # self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
