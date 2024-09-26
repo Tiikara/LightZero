@@ -73,7 +73,7 @@ atari_unizero_config = dict(
             representaion_model=dict(
                 type='downsample',
                 downsample_network=dict(
-                    type='base_convnext',
+                    type='mobilenetv4',
                     res_net=dict(
                         use_coords=False,
                         start_channels=32,
@@ -166,7 +166,6 @@ atari_unizero_config = dict(
                 )
             ),
         ),
-        use_late_dropout=False,
         # (str) The path of the pretrained model. If None, the model will be initialized by the default model.
         # /mnt/d/source/LightZero/data_unizero/Pong_stack1_unizero_upcNone-rr0.25_H10_bs64_seed1726102429/ckpt/ckpt_best.pth.tar
         model_path=None,

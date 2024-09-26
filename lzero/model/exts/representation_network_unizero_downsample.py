@@ -26,6 +26,7 @@ from collections import OrderedDict
 
 from lzero.model.common import DownSample
 from .capsnet_ext_modules import CapsInitialModule, CapsInitialModuleForward1D, PrimaryCapsForward1D
+from .mobilenetv4_down_sample import MobileNetV4DownSample
 from .multiply_module import MultiplyModule
 from .norm.grouped_instance_normalization import GroupedInstanceNormalization
 from .norm.uan import UAN
@@ -106,6 +107,10 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 observation_shape=observation_shape,
                 activation=activation,
                 norm_type=norm_type
+            )
+        elif downsample_network_config.type == 'mobilenetv4':
+            self.downsample_net = MobileNetV4DownSample(
+                activation=activation
             )
         elif downsample_network_config.type == 'pos':
             self.downsample_net = DownSampleFullPos(
