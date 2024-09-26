@@ -187,41 +187,17 @@ def train_unizero(
                 )
                 continue
 
-            if cfg.policy.use_late_dropout is not True:
-                for i in range(update_per_collect):
-                    train_data = replay_buffer.sample(batch_size, policy)
-                    if cfg.policy.reanalyze_ratio > 0 and i % 20 == 0:
-                        # Clear caches and precompute positional embedding matrices
-                        policy.recompute_pos_emb_diff_and_clear_cache()  # TODO
+            for i in range(update_per_collect):
+                train_data = replay_buffer.sample(batch_size, policy)
+                if cfg.policy.reanalyze_ratio > 0 and i % 20 == 0:
+                    # Clear caches and precompute positional embedding matrices
+                    policy.recompute_pos_emb_diff_and_clear_cache()  # TODO
 
-                    train_data.append({'train_which_component': 'transformer'})
-                    log_vars = learner.train(train_data, collector.envstep)
+                train_data.append({'train_which_component': 'transformer'})
+                log_vars = learner.train(train_data, collector.envstep)
 
-                    if cfg.policy.use_priority:
-                        replay_buffer.update_priority(train_data, log_vars[0]['value_priority_orig'])
-            else:
-                learn_model_dropout_changer = DropoutModelChanger(policy.get_learn_model())
-                target_model_dropout_changer = DropoutModelChanger(policy.get_target_model())
-
-                for epoch in range(3):
-                    if epoch > 0:
-                        learn_model_dropout_changer.change(lambda _, current_p: 0.2 if current_p == 0. else (current_p * 2 if current_p < 0.5 else current_p))
-                        target_model_dropout_changer.change(lambda _, current_p: 0.2 if current_p == 0. else (current_p * 2 if current_p < 0.5 else current_p))
-
-                    for i in range(update_per_collect):
-                        train_data = replay_buffer.sample(batch_size, policy)
-                        if cfg.policy.reanalyze_ratio > 0 and i % 20 == 0:
-                            # Clear caches and precompute positional embedding matrices
-                            policy.recompute_pos_emb_diff_and_clear_cache()  # TODO
-
-                        train_data.append({'train_which_component': 'transformer'})
-                        log_vars = learner.train(train_data, collector.envstep)
-
-                        if cfg.policy.use_priority:
-                            replay_buffer.update_priority(train_data, log_vars[0]['value_priority_orig'])
-
-                learn_model_dropout_changer.revert()
-                target_model_dropout_changer.revert()
+                if cfg.policy.use_priority:
+                    replay_buffer.update_priority(train_data, log_vars[0]['value_priority_orig'])
 
 
         policy.recompute_pos_emb_diff_and_clear_cache()

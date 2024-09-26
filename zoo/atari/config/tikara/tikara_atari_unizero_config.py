@@ -92,7 +92,7 @@ atari_unizero_config = dict(
                     num_layers=1,
                     last_norm=None
                 ),
-                head_type='linear_norm_except_one',
+                head_type='linear_grouped_instance_norm_except_one',
                 head=dict(
                     linear=dict(
                         use_coords=False
