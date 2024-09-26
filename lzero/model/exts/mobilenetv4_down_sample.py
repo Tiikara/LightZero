@@ -44,6 +44,7 @@ class MobileNetV4DownSample(nn.Module):
 
         self.mobilenet = timm.create_model(
             'mobilenetv4_conv_small.e2400_r224_in1k',
+            act_layer=lambda : activation,
             pretrained=True,
             num_classes=0,
         )
