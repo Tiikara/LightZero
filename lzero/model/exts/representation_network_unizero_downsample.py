@@ -31,6 +31,7 @@ from .multiply_module import MultiplyModule
 from .norm.grouped_instance_normalization import GroupedInstanceNormalization
 from .norm.uan import UAN
 from .norms.rms_norm import RMSNorm
+from .pretraned_fpn_down_sample import PretrainedFPNDownSample
 from .remove_first_dim_module import RemoveFirstDimModule, RemoveFirstDimsModule
 from .res_fc_block import ResFCBlock
 from .res_feed_forward_block import ResFeedForwardBlock
@@ -117,6 +118,11 @@ class RepresentationNetworkUniZeroDownsample(nn.Module):
                 observation_shape=observation_shape,
                 activation=activation,
                 norm_type=norm_type
+            )
+        elif downsample_network_config.type == 'pretrained_fpn':
+            self.downsample_net = PretrainedFPNDownSample(
+                latent_dim=embedding_dim,
+                activation=activation
             )
         elif downsample_network_config.type == 'res_net':
             res_net_config = downsample_network_config.res_net
