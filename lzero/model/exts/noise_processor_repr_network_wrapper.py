@@ -54,6 +54,7 @@ class NoiseSchedulerConfig:
 @dataclass
 class NoiseConfig:
     use_norm: bool
+    encode_noise_info_to_latent: bool
     noise_strength_config: NoiseStrengthConfig
     noise_scheduler: NoiseSchedulerConfig
 
@@ -213,14 +214,16 @@ class NoiseProcessorReprNetworkWrapper(nn.Module):
 
         x_encoded = self.encoder(x_noised)
 
-        x_encoded[:, 0] = std_devs / (torch.max(self.noise_scheduler.initial_noise, self.noise_scheduler.final_noise))
+        if self.config.encode_noise_info_to_latent:
+            x_encoded[:, 0] = std_devs / (torch.max(self.noise_scheduler.initial_noise, self.noise_scheduler.final_noise))
 
         return x_encoded
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_encoded = self.encoder(x)
 
-        x_encoded[:, 0] = 0.
+        if self.config.encode_noise_info_to_latent:
+            x_encoded[:, 0] = 0.
 
         return x_encoded
 
